@@ -1,0 +1,91 @@
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'science' %}
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="{{ asset('css/buildings.css') }}" rel="stylesheet"/>
+{% endblock %}
+{% block title %}Space-Tactics Main{% endblock %}
+{% block body %}
+
+    {% include 'parts/ingame_mainmenu.html.twig' %}
+    <section id="content" class="main buildings-container">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-2 col-md-12">
+                    {% if app.user is not null %}
+                        {% include 'parts/sidebar.html.twig' %}
+                    {% endif %}
+                </div>
+                <div class="col-lg-10 col-md-12">
+                    <section>
+                        <div class="row">
+                            <div class="col-lg-7 col-md-12">
+                                <div class="row">
+                                    <div class="col-lg-6 mt-1">
+                                        <h3>{{ user.username }}, anderen voraus sein ist wichtig! </h3>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <select name="planet" class="form-control planet-switcher-select">
+                                            {% for planet in planets %}
+
+                                                <option
+                                                        value="{{ planet.slug }}"
+                                                        style="color: #000;"
+                                                        {{ planet.slug == slug ? 'selected' : '' }}
+                                                >
+                                                    {{ planet.name }}
+                                                    {{ planet.systemX }}:{{ planet.systemY }}:{{ planet.systemZ }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="container-fluid mt-3">
+                            <div class="buildings">
+
+                                {% if  science is not empty %}
+                                    {% for sc in science %}
+
+                                        <div class="building">
+                                            <div class="building-headline">
+                                                <span>{{ sc.name|trans }}</span> |
+                                                <a href="#" title="{{ 'recycle'|trans }}">x</a>
+                                            </div>
+                                            <div class="building-content">
+                                                <div class="col-6 building-content-image">
+                                                    {% if sc.image is not empty %}
+                                                        <img src="/{{ sc.image }}" alt="Science image"/>
+                                                    {% else %}
+                                                        <img src="{{ asset('img/science/dummy.jpg') }}" alt="Science image"/>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-6 building-content-specs">
+
+                                                    {#<div class="metal">{{ 'metal'|trans({},'resources') }}
+                                                        : {{ sc.BuildCosts.metal }}</div>
+                                                    <div class="crystal">{{ 'crystal'|trans({},'resources') }}
+                                                        : {{ sc.BuildCosts.crystal }}</div>
+                                                    <div class="deuterium">{{ 'deuterium'|trans({},'resources') }}
+                                                        : {{ sc.BuildCosts.deuterium }}</div>#}
+                                                </div>
+                                            </div>
+                                            <div class="col-12 building-button mt-1">
+                                                <button type="button"
+                                                        class="btn btn-light">
+                                                    {{ 'upgrade_to'|trans }} {#{{ nextLevel }}#}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% include 'parts/footer.html.twig' %}
+{% endblock %}

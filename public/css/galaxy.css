@@ -1,0 +1,14 @@
+.galaxy {
+  display: flex;
+  flex-direction: column;
+}
+.galaxy .galaxy-item {
+  min-width: 3px;
+  min-height: 3px;
+  background: #0c4128;
+}
+.galaxy .galaxy-item:hover {
+  background: #69e527;
+}
+
+/*# sourceMappingURL=galaxy.css.map */

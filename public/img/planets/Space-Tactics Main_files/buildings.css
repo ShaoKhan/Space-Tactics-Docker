@@ -1,0 +1,14 @@
+.buildings-container .buildings {
+  color: #FFF;
+}
+.buildings-container .buildings .building {
+  background: #2E3337;
+  padding: 0.5em 1em;
+}
+.buildings-container .buildings .building-headline {
+  background: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  margin: 0 0 0.5em 0;
+}
+
+/*# sourceMappingURL=buildings.css.map */

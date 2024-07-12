@@ -1,0 +1,96 @@
+// admin
+.admin-support {
+
+  .card{
+    box-shadow: $shadow;
+  }
+
+  .ticket {
+    display: flex;
+    flex-direction: row;
+    padding: 5px 10px;
+
+    .bi {
+      cursor: pointer;
+      margin-right: 5px;
+      color: $white;
+    }
+
+    &.message {
+      display: none;
+    }
+  }
+
+  .ticket- {
+    &bug {
+      background-color: rgba(185, 3, 4, 0.8);
+      color: $white;
+      button{
+        color: $white;
+        text-decoration: none;
+      }
+    }
+
+    &spieler {
+      background-color: rgba(185, 182, 9, 0.8);
+      color: $black;
+    }
+
+    &sonstiges {
+      background-color: rgba(28, 94, 233, 0.3);
+    }
+
+    &technisch {
+      background-color: rgba(145, 30, 0, 0.3);
+    }
+  }
+
+}
+
+
+// ingame
+.ingame_support {
+  .card{
+    box-shadow: $shadow;
+  }
+
+  .ticket {
+    display: flex;
+    flex-direction: row;
+    padding: 5px 10px;
+
+    .bi {
+      cursor: pointer;
+      margin-right: 5px;
+      color: $white;
+    }
+
+    &.message {
+      display: none;
+    }
+  }
+
+  .ticket- {
+    &bug {
+      background-color: rgba(185, 3, 4, 0.8);
+      color: $white;
+      button{
+        color: $white;
+        text-decoration: none;
+      }
+    }
+
+    &spieler {
+      background-color: rgba(185, 182, 9, 0.8);
+      color: $black;
+    }
+
+    &sonstiges {
+      background-color: rgba(28, 94, 233, 0.3);
+    }
+
+    &technisch {
+      background-color: rgba(145, 30, 0, 0.3);
+    }
+  }
+}

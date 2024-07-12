@@ -1,0 +1,124 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Space-Tactics Main{% endblock %}
+
+{% block body %}
+    <!-- Main Menu -->
+    {% include 'admin/parts/mainmenu.html.twig' %}
+
+
+    <!-- Content -->
+    <section id="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-2 col-md-12">
+                    <!-- Sidebar -->
+                    {% if app.user is not null %}
+                        {% include 'admin/parts/sidebar.html.twig' %}
+                    {% endif %}
+                </div>
+
+                <!-- Main Content -->
+                <div class="col-lg-10 col-md-12">
+                    <section>
+                        <div class="row">
+                            <div class="col-lg-7 col-md-12">
+                                <h3>Server-Konfiguration</h3>
+                                <a href="{{ path('admin_server_add') }}">hinzufügen</a>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-7 col-md-12 mt-4">
+                                {% if server is iterable %}
+                                    {% for serverdata in server %}
+                                        <div class="row">
+                                            <div class="col-lg-6">ServerName:</div>
+                                            <div class="col-lg-6"><h3>{{ serverdata.gameName }}</h3></div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">Nachrichten löschen nach:</div>
+                                            <div class="col-lg-6">{{ serverdata.msgDeleteAfter }} Tagen</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">Spieler löschen nach:</div>
+                                            <div class="col-lg-6">{{ serverdata.userDeleteAfter }} Tagen</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">Inaktive Spieler löschen nach:</div>
+                                            <div class="col-lg-6">{{ serverdata.inactiveDeleteAfter }} Tagen</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">Erinnerungsmails versenden:</div>
+                                            <div class="col-lg-6">
+                                                {% if serverdata.reminderMail == 0 %}
+                                                    Nein
+                                                {% else %}
+                                                    Ja
+                                                {% endif %}
+                                            </div>
+                                        </div>
+
+                                        {% if serverdata.reminderMail == 1 %}
+                                        <div class="row">
+                                            <div class="col-lg-6">Erinnerungsmail versenden nach:</div>
+                                            <div class="col-lg-6">{{ serverdata.sendReminderAfter }} Inaktivität</div>
+                                        </div>
+                                        {% endif %}
+
+                                        <div class="row">
+                                            <div class="col-lg-6">Mails versenden via:</div>
+                                            <div class="col-lg-6">{{ serverdata.senderType }}</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">Absender in der E-Mail:</div>
+                                            <div class="col-lg-6">{{ serverdata.senderMail }}</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">Pfad zu sendmail:</div>
+                                            <div class="col-lg-6">{{ serverdata.sendmailpath }}</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">SMTP Host:</div>
+                                            <div class="col-lg-6">{{ serverdata.smtpHost }}</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">SMTP Port:</div>
+                                            <div class="col-lg-6">{{ serverdata.smtpPort }}</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">SMTP mit SSL/TLS:</div>
+                                            <div class="col-lg-6">{{ serverdata.smtpSslTls }}</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">SMTP Benutzername:</div>
+                                            <div class="col-lg-6">{{ serverdata.smtpUsername }}</div>
+                                        </div>
+
+                                    {% endfor %}
+                                {% endif %}
+
+
+                            </div>
+                        </div>
+
+                    </section>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    {% include 'parts/footer.html.twig' %}
+{% endblock %}
+
+

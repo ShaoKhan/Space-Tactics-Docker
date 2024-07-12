@@ -1,0 +1,187 @@
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'buildings' %}
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="{{ asset('css/buildings.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block title %}Space-Tactics Main{% endblock %}
+{% block body %}
+
+    {% include 'parts/ingame_mainmenu.html.twig' %}
+    <section id="content" class="main buildings-container">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-2 col-md-12">
+                    {% if app.user is not null %}
+                        {% include 'parts/sidebar.html.twig' %}
+                    {% endif %}
+                </div>
+                <div class="col-lg-10 col-md-12">
+                    <section>
+                        <div class="row">
+                            <div class="col-lg-7 col-md-12">
+                                <div class="row">
+                                    <div class="col-lg-6 mt-1">
+                                        <h3>{{ user.username }}, du befindest dich im Baumenü für: </h3>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <select name="planet" class="form-control planet-switcher-select">
+                                            {% for planet in planets %}
+
+                                                <option
+                                                        value="{{ planet.slug }}"
+                                                        style="color: #000;"
+                                                        {{ planet.slug == slug ? 'selected' : '' }}
+                                                >
+                                                    {{ planet.name }}
+                                                    {{ planet.systemX }}:{{ planet.systemY }}:{{ planet.systemZ }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="container-fluid mt-3">
+                            {% if buildList|length > 0 %}
+                                <div id="buildQueue">
+                                    {% for queuedBuilding in buildList %}
+                                        {% set remainingTime = queuedBuilding.timeLeft - "now"|date("U") %}
+                                        <div class="row">
+                                            <div class="col-1">{{ queuedBuilding.name|trans({}, 'buildings') }}</div>
+                                            <div class="col-11">
+                                                <div id="queueItem" class="queueItem_{{ queuedBuilding.buildingId }}">
+                                                    <div class="countdown-progress"
+                                                         id="{{ queuedBuilding.name }}"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <div class="alert alert-success" style="display: none"></div>
+                            <div class="alert alert-danger" style="display: none"></div>
+
+                            <div class="buildings">
+                                {% if buildings is not empty %}
+                                    {% for name, buildingdata in buildings %}
+                                        {% if buildingdata.isBuildable == true %}
+                                            {% if buildingdata.level is defined %}
+                                                {% set nextlevel = buildingdata.level + 1 %}
+                                            {% else %}
+                                                {% set nextlevel = 1 %}
+                                            {% endif %}
+
+                                            <div class="building">
+                                                <div class="building-headline">
+
+                                                    <span>{{ buildingdata.name|trans({}, 'buildings') }}</span> |
+                                                    <a href="#" title="{{ 'recycle'|trans({},'buildings') }}">x</a>
+                                                </div>
+                                                <div class="building-content">
+                                                    <div class="col-6 building-content-image">
+                                                        {% if buildingdata.image is not null %}
+                                                            <img src="/{{ buildingdata.image }}" alt="Planet image"/>
+                                                        {% else %}
+                                                            <img src="https://placehold.co/262x175" alt="Planet image"/>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="col-6 building-content-specs">
+                                                        <h4> {{ 'costs'|trans({},'ui') }} {{ 'stage'|trans({},'ui') }} {{ nextlevel }}
+                                                            :</h4>
+                                                        <div class="energy">{{ 'energy'|trans({},'resources') }}
+                                                            : {{ buildingdata.__get('nextLevelEnergyCost')|number_format(0, ',', '.') }}</div>
+                                                        <div class="metal">{{ 'metal'|trans({},'resources') }}
+                                                            : {{ buildingdata.__get('nextLevelBuildCost').metal|number_format(0, ',', '.') }}</div>
+                                                        <div class="crystal">{{ 'crystal'|trans({},'resources') }}
+                                                            : {{ buildingdata.__get('nextLevelBuildCost').crystal|number_format(0, ',', '.') }}</div>
+                                                        <div class="deuterium">{{ 'deuterium'|trans({},'resources') }}
+                                                            : {{ buildingdata.__get('nextLevelBuildCost').deuterium|number_format(0, ',', '.') }}</div>
+                                                        <h4>{{ 'production'|trans({},'ui') }} {{ nextlevel }}:</h4>
+                                                        <div>{{ buildingdata.__get('nextLevelProd')|number_format(0, ',', '.') }}
+                                                            / {{ 'hour'|trans({},'ui') }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 building-button mt-1">
+                                                    <button type="button"
+                                                            class="btn btn-light start-construction"
+                                                            data-values="{{ buildingdata.slug }}"
+                                                    >
+                                                        {{ 'upgrade_to'|trans({},'buildings') }} {{ nextlevel }}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+
+        let buildlist = {{ buildList|json_encode|raw }};
+
+        function formatTime(seconds) {
+            const days = Math.floor(seconds / (60 * 60 * 24));
+            seconds -= days * (60 * 60 * 24);
+            const hours = Math.floor(seconds / (60 * 60));
+            seconds -= hours * (60 * 60);
+            const minutes = Math.floor(seconds / 60);
+            seconds -= minutes * 60;
+
+            const leadingHours = hours < 10 ? '0' : '';
+            const leadingMinutes = minutes < 10 ? '0' : '';
+            const leadingSeconds = seconds < 10 ? '0' : '';
+
+            let formattedTime = '';
+            if (days > 0) {
+                formattedTime += `${days} Tage `;
+            }
+            formattedTime += `${leadingHours}${hours}:`;
+            formattedTime += `${leadingMinutes}${minutes}:`;
+            formattedTime += `${leadingSeconds}${seconds}`;
+
+            return formattedTime;
+        }
+
+        function updateProgressBar() {
+            const currentTime = Math.floor(Date.now() / 1000);
+
+            buildlist.forEach((queuedBuilding, index) => {
+                const progressBar = document.getElementById(queuedBuilding.name);
+
+                if (progressBar) {
+                    const startTime = Math.floor(new Date(queuedBuilding.start).getTime() / 1000);
+                    const endTime = Math.floor(new Date(queuedBuilding.end).getTime() / 1000);
+                    const actTime = Math.floor(new Date().getTime() / 1000);
+                    const totalDuration = endTime - startTime;
+                    const progress = Math.min((currentTime - startTime) / totalDuration, 1);
+                    const remainingTime = totalDuration - (currentTime - startTime);
+
+                    progressBar.style.width = (progress * 100) + '%';
+                    progressBar.textContent = formatTime(remainingTime);
+
+                    if (actTime >= endTime) {
+                        buildlist.splice(index, 1);
+                        (buildlist.length === 0) ? $('#buildQueue').remove() : $(progressBar.closest('.row')).remove();
+
+                        $.ajax({
+                            url: "//cron_construction",
+                        });
+                    }
+                }
+            });
+        }
+
+        setInterval(updateProgressBar, 1000);
+    </script>
+
+    {% include 'parts/footer.html.twig' %}
+{% endblock %}

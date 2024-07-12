@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="{{ asset('css/buildings.css') }}" rel="stylesheet"/>
+{% endblock %}
+{% block title %}Space-Tactics Main{% endblock %}
+{% block body %}
+
+    {% include 'parts/ingame_mainmenu.html.twig' %}
+    <section id="content" class="main buildings-container">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-2 col-md-12">
+                    {% if app.user is not null %}
+                        {% include 'parts/sidebar.html.twig' %}
+                    {% endif %}
+                </div>
+                <div class="col-lg-10 col-md-12">
+                    <section>
+                        <div class="row">
+                            <div class="col-lg-7 col-md-12">
+                                <div class="row">
+                                    <div class="col-lg-6 mt-1">
+                                        <h3>{{ user.username }}, dein letzter Scan zeigt dir Folgendes an! </h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="container-fluid">
+                            {% if dimensions.itemsize > 0 %}
+                            {% set width = dimensions.galaxy_width %}
+                            {% set height = dimensions.galaxy_height %}
+
+                            <div class="galaxy">
+                                {% for i in 1..width %}
+                                    <div class="galaxy-row">
+                                    {% for j in 1..height %}
+                                        <div class="galaxy-item {% for coord in coords %}{{ coord.x == i and coord.y == j ? ' populated' : '' }}{% endfor %}"
+                                             data-toggle="tooltip" data-placement="bottom"
+                                             data-html="true" title="{{ i }}:{{ j }}" data-coords="{{ i }}:{{ j }}"
+                                             style="width: {{ dimensions.itemsize }}px; height: {{ dimensions.itemsize }}px;">
+                                        </div>
+                                        <div class="col-12 message message_{{ i }}_{{ j }}"
+                                             data-width="{{ width }}"></div>
+                                        {% if j is divisible by(dimensions.break) %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% include 'parts/footer.html.twig' %}
+    <script>
+        function addFriend(slug) {
+            $.ajax({
+                url: "/galaxymap/add_friend",
+                type: 'POST',
+                data: {
+                    'slug': slug
+                },
+                success: function (data) {
+                    console.log(data);
+                },
+                error: function (data) {
+                    console.log('error');
+                }
+            })
+        }
+    </script>
+{% endblock %}

@@ -5,6 +5,11 @@ with [FrankenPHP](https://frankenphp.dev) and [Caddy](https://caddyserver.com/) 
 
 ![CI](https://github.com/dunglas/symfony-docker/workflows/CI/badge.svg)
 
+- Web: http://localhost
+- Mailhog: http://localhost:8025
+- phpMyAdmin: http://localhost:8080
+
+
 ## Getting Started
 
 1. If not already done, [install Docker Compose](https://docs.docker.com/compose/install/) (v2.10+)

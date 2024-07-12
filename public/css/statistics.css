@@ -1,0 +1,7 @@
+.statistics .planetdata {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+}
+
+/*# sourceMappingURL=statistics.css.map */

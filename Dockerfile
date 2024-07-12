@@ -37,6 +37,10 @@ RUN set -eux; \
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 ###> recipes ###
+###> doctrine/doctrine-bundle ###
+#RUN install-php-extensions pdo_pgsql
+RUN install-php-extensions pdo_mysql
+###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
 COPY --link frankenphp/conf.d/app.ini $PHP_INI_DIR/conf.d/
