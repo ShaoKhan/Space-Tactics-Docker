@@ -11,9 +11,7 @@ readonly class PlanetService
     public function __construct(
         protected PlanetRepository     $planetRepository,
         protected PlanetTypeRepository $planetTypeRepository,
-    )
-    {
-    }
+    ){}
 
     public function getPlanetsByPlayer(
         $user,

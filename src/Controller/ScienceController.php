@@ -5,43 +5,48 @@ namespace App\Controller;
 use App\Repository\PlanetRepository;
 use App\Repository\SciencesRepository;
 use App\Service\BuildingCalculationService;
+use App\Service\CheckMessagesService;
+use App\Service\PlanetService;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class ScienceController extends CustomAbstractController
 {
 
-    use Traits\MessagesTrait;
-    use Traits\PlanetsTrait;
+    public function __construct(
+        private readonly BuildingCalculationService $buildingCalculationService,
+        private readonly PlanetRepository           $planetRepository,
+        private readonly SciencesRepository         $sciencesRepository,
+        private readonly ManagerRegistry            $managerRegistry,
+        protected readonly CheckMessagesService     $checkMessagesService,
+        protected readonly PlanetService            $planetService,
+        Security                                    $security,
+        LoggerInterface                             $logger,
+
+    ) {
+        parent::__construct($security, $logger);
+    }
 
     #[Route('/science/{slug?}', name: 'science')]
     public function index(
-        ManagerRegistry            $managerRegistry,
-        PlanetRepository           $p,
-        BuildingCalculationService $bcs,
-        SciencesRepository         $sr,
-        Security                   $security,
-        Request                    $request,
-                                   $slug = NULL,
-    ): Response
-    {
+        $slug = NULL,
+    ): Response {
 
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets = $this->getPlanetsByPlayer($managerRegistry, $this->user, $slug);
+        $planets = $this->planetService->getPlanetsByPlayer($this->user, $slug);
 
         if($slug === NULL) {
             $slug = $planets[1]->getSlug();
         }
-        $res        = $p->findOneBy(['user_uuid' => $this->user->getUuid(), 'slug' => $slug]);
-        $prodActual = $bcs->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $managerRegistry);
 
-        //science
-        #$sc = $sr->findByPlanetAndPlayer($this->user_uuid, $slug);
-        $sc = $sr->findAll();
+        $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
 
+        //ToDo: get science by planet and the dependencies
+        $sc = $this->sciencesRepository->findAll();
 
         return $this->render(
             'science/index.html.twig', [
@@ -49,10 +54,10 @@ class ScienceController extends CustomAbstractController
             'selectedPlanet' => $planets[1],
             'planetData'     => $planets[2],
             'user'           => $this->getUser(),
-            'messages'       => $this->getMessages($security, $managerRegistry),
+            'messages'       => $this->checkMessagesService->checkMessages(),
             'slug'           => $slug,
             'production'     => $prodActual,
-            'science'             => $sc,
+            'science'        => $sc,
         ],
         );
     }

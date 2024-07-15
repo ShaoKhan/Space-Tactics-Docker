@@ -9,8 +9,8 @@ use Symfony\Bundle\SecurityBundle\Security;
 
 class CustomAbstractController extends SymfonyAbstractController
 {
-    protected readonly object $user;
-    protected readonly string $user_uuid;
+    protected readonly ?object $user;
+    protected readonly ?string $user_uuid;
 
     public function __construct(
 
@@ -19,8 +19,8 @@ class CustomAbstractController extends SymfonyAbstractController
     )
     {
         if($security->getUser() !== null) {
-            $this->user_uuid = $this->security->getUser()->getUuid();
-            $this->user      = $this->security->getUser();
+            $this->user      = $this->security->getUser() ?? null;
+            $this->user_uuid = $this->user?->getUuid() ?? null;
         }
     }
 

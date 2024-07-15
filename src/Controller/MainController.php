@@ -2,56 +2,73 @@
 
 namespace App\Controller;
 
-use App\Entity\Planet;
 use App\Entity\Support;
 use App\Entity\User;
 use App\Form\SupportAnswerType;
 use App\Form\SupportType;
-use App\Repository\BuildingsQueueRepository;
 use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
 use App\Repository\SupportRepository;
+use App\Repository\UniRepository;
+use App\Repository\UserRepository;
+use App\Security\EmailVerifier;
 use App\Service\BuildingCalculationService;
+use App\Service\CheckMessagesService;
+use App\Service\PlanetService;
+use App\Service\UserService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class MainController extends CustomAbstractController
 {
 
-    use Traits\MessagesTrait;
-    use Traits\PlanetsTrait;
+    public function __construct(
+        protected readonly PlanetService               $planetService,
+        protected readonly PlanetRepository            $planetRepository,
+        protected readonly CheckMessagesService        $checkMessagesService,
+        protected readonly EmailVerifier               $emailVerifier,
+        protected readonly ManagerRegistry             $managerRegistry,
+        protected readonly BuildingCalculationService  $buildingCalculationService,
+        protected readonly PlanetBuildingRepository    $planetBuildingRepository,
+        protected readonly UserPasswordHasherInterface $passwordHasher,
+        protected readonly EntityManagerInterface      $em,
+        protected readonly UniRepository               $uniRepository,
+        protected readonly TranslatorInterface         $translator,
+        protected readonly UserRepository              $userRepository,
+        protected readonly SupportRepository           $supportRepository,
+        protected readonly UserService                 $userService,
+        Security                                       $security,
+        LoggerInterface                                $logger,
+    ) {
+        parent::__construct($security, $logger);
+    }
 
     #[Route('/main/{slug?}', name: 'main')]
     public function index(
-        ManagerRegistry            $managerRegistry,
-        Security                   $security,
-        PlanetRepository           $p,
-        BuildingCalculationService $bcs,
-        BuildingsQueueRepository   $bqr,
-        Request                    $request,
-                                   $slug,
-        EntityManagerInterface     $em,
-    ): Response
-    {
+        $slug,
+    ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets = $this->getPlanetsByPlayer($managerRegistry, $this->user, $slug);
+        $planets = $this->planetService->getPlanetsByPlayer($this->user, $slug);
 
         if($slug === NULL) {
             $slug = $planets[1]->getSlug();
         }
 
-        $res        = $p->findOneBy(['user_uuid' => $this->user->getUuid(), 'slug' => $slug]);
-        $prodActual = $bcs->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $managerRegistry);
+        $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
         $now        = new \DateTime();
         $nowString  = $now->format('Y-m-d H:i:s');
 
@@ -65,7 +82,7 @@ class MainController extends CustomAbstractController
             'selectedPlanet' => $planets[1],
             'planetData'     => $planets[2],
             'user'           => $this->user,
-            'messages'       => $this->getMessages($security, $managerRegistry),
+            'messages'       => $this->checkMessagesService->checkMessages(),
             'slug'           => $slug,
             'production'     => $prodActual,
         ],
@@ -76,23 +93,20 @@ class MainController extends CustomAbstractController
     public function logoutAction(
         AuthorizationCheckerInterface $authorizationChecker,
         SessionInterface              $session,
-        EntityManagerInterface        $entityManager,
         RequestStack                  $requestStack,
         Security                      $security,
-    ): Response
-    {
+    ): Response {
 
         if($authorizationChecker->isGranted('IS_AUTHENTICATED_FULLY')) {
             // Custom logout logic, if needed
             /** @var User $user */
             $user = $this->user;
             $user->setLogoutOn(new \DateTime());
-            $entityManager->persist($user);
-            $entityManager->flush();
+            $this->userRepository->save($user);
             $requestStack->getSession()->invalidate();
 
         }
-        $response = $security->logout();
+        $security->logout();
         $session->invalidate();
 
         return $this->render('logout.html.twig');
@@ -101,33 +115,23 @@ class MainController extends CustomAbstractController
 
     #[Route('/statistics/{slug?}', name: 'statistics')]
     public function statistics(
-        ManagerRegistry            $managerRegistry,
-        Security                   $security,
-        PlanetRepository           $p,
-        PlanetBuildingRepository   $pbr,
-        BuildingCalculationService $bcs,
-        BuildingsQueueRepository   $bqr,
-        Request                    $request,
-                                   $slug,
-        EntityManagerInterface     $em,
-    ): Response
-    {
+        $slug,
+
+    ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
+        $planets = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $slug    = $slug ?? $planets[0]->getSlug();
 
-
-        $planets            = $this->getPlanetsByPlayer($managerRegistry, $this->user, $slug);
-        $slug               = $slug ?? $planets[0]->getSlug();
-        $repository         = $managerRegistry->getRepository(Planet::class);
-        $planet             = $repository->findOneBy(['user_uuid' => $this->user->getUuid(), 'slug' => $slug]);
+        $planet             = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
         $metalBuilding      = $planet->getMetalBuilding();
         $crystalBuilding    = $planet->getCrystalBuilding();
         $deuteriumBuilding  = $planet->getDeuteriumBuilding();
-        $prodActual         = $bcs->calculateActualBuildingProduction($metalBuilding, $crystalBuilding, $deuteriumBuilding, $managerRegistry);
-        $planetForBuildings = $repository->findBy(['user_uuid' => $this->user->getUuid()]);
+        $prodActual         = $this->buildingCalculationService->calculateActualBuildingProduction($metalBuilding, $crystalBuilding, $deuteriumBuilding, $this->managerRegistry);
+        $planetForBuildings = $this->planetRepository->findBy(['user_uuid' => $this->user_uuid]);
         $buildings          = [];
 
         foreach($planetForBuildings as $pl) {
-            $buildings[$pl->getSlug()] = $pbr->getPlanetBuildingsByPlanetId($em, $pl->getId());
+            $buildings[$pl->getSlug()] = $this->planetBuildingRepository->getPlanetBuildingsByPlanetId($this->em, $pl->getId());
         }
 
         return $this->render(
@@ -136,7 +140,7 @@ class MainController extends CustomAbstractController
             'selectedPlanet' => $planets[1],
             'planetData'     => $planets[2],
             'user'           => $this->getUser(),
-            'messages'       => $this->getMessages($security, $managerRegistry),
+            'messages'       => $this->checkMessagesService->checkMessages(),
             'slug'           => $slug,
             'production'     => $prodActual,
             'buildings'      => $buildings,
@@ -146,28 +150,21 @@ class MainController extends CustomAbstractController
 
     #[Route('/support/{slug?}', name: 'support')]
     public function support(
-        Request                    $request,
-        ManagerRegistry            $managerRegistry,
-        PlanetRepository           $p,
-        EntityManagerInterface     $em,
-        Security                   $security,
-        Session                    $session,
-        SupportRepository          $supportRepository,
-        BuildingCalculationService $bcs,
-                                   $slug = NULL,
-    ): Response
-    {
+        Request $request,
+        Session $session,
+                $slug = NULL,
+    ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets = $this->getPlanetsByPlayer($managerRegistry, $this->user, $slug);
+        $planets = $this->planetService->getPlanetsByPlayer($this->user, $slug);
 
         if($slug === NULL) {
             $slug = $planets[1]->getSlug();
         }
 
-        $res        = $p->findOneBy(['user_uuid' => $this->user->getUuid(), 'slug' => $slug]);
-        $prodActual = $bcs->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $managerRegistry);
+        $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
 
-        $tickets = $supportRepository->findBy(['uuid' => $this->user->getUuid(), 'closed' => 0]);
+        $tickets = $this->supportRepository->findBy(['uuid' => $this->user_uuid, 'closed' => 0]);
 
         $groupedMessages = [];
         foreach($tickets as $message) {
@@ -177,8 +174,7 @@ class MainController extends CustomAbstractController
                     'question' => $message,
                     'answers'  => [],
                 ];
-            }
-            else {
+            } else {
                 $groupedMessages[$parentId]['answers'][] = $message;
             }
         }
@@ -187,49 +183,44 @@ class MainController extends CustomAbstractController
         $answerForm->handleRequest($request);
 
         if($answerForm->isSubmitted() && $answerForm->isValid()) {
-
-            $user      = $security->getUser();
-            $old       = $supportRepository->findOneBy(['slug' => $answerForm->get('ticketId')->getData()]);
+            $old       = $this->supportRepository->findOneBy(['slug' => $answerForm->get('ticketId')->getData()]);
             $newTicket = new Support();
 
-            $newTicket->setUuid($user->getUuid())
+            $newTicket->setUuid($this->user_uuid)
                       ->setDatum(new \DateTime())
                       ->setSubject('RE: ' . $old->getSubject())
                       ->setTheme($old->getTheme())
                       ->setMessage($answerForm->get('message')->getData())
-                      ->setProcessedBy($user->getUsername())
+                      ->setProcessedBy($this->user->getUsername())
                       ->setProcessedSince(new \DateTime())
                       ->setAnswered(1)
                       ->setClosed(0)
                       ->setParentMessage($old->getId())
-                      ->setUsername($user->getUsername())
-                      ->setSlug(Uuid::v4())
-            ;
+                      ->setUsername($this->user->getUsername())
+                      ->setSlug(Uuid::v4());
 
-            $em->persist($newTicket);
-            $em->flush();
+            $this->supportRepository->save($newTicket);
         }
 
 
         $form = $this->createForm(SupportType::class, new Support());
         $form->handleRequest($request);
         if($form->isSubmitted()) {
-            $form->getData()->setUuid($security->getUser()->getUuid());
-            $form->getData()->setUsername($security->getUser()->getUsername());
+            $form->getData()->setUuid($this->user_uuid);
+            $form->getData()->setUsername($this->user->getUsername());
             $form->getData()->setDatum(new \DateTime());
             $form->getData()->setAnswered(FALSE);
             $form->getData()->setClosed(FALSE);
             $form->getData()->setSlug(Uuid::v4());
 
-            $em->persist($form->getData());
-            $em->flush();
+            $this->supportRepository->save($form->getData());
             $session->getFlashBag()->add('success', 'Dein Ticket wurde erstellt. Vielen Dank.');
         }
         return $this->render(
             'main/support.html.twig', [
             'selectedPlanet'  => $planets[1],
             'user'            => $this->getUser(),
-            'messages'        => $this->getMessages($security, $managerRegistry),
+            'messages'        => $this->checkMessagesService->checkMessages(),
             'form'            => $form->createView(),
             'answerForm'      => $answerForm->createView(),
             'tickets'         => $tickets,
@@ -261,19 +252,26 @@ class MainController extends CustomAbstractController
 
     #[Route('/notices/{slug?}', name: 'notices')]
     public function playerNotices(
-        Request $request, ManagerRegistry $managerRegistry, PlanetRepository $p, EntityManagerInterface $em, Security $security, $slug = NULL,
-    ): Response
-    {
-        $user_uuid = $this->user->getUuid();
+        $slug = NULL,
+    ): Response {
+
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets = $this->getPlanetsByPlayer($managerRegistry, $user_uuid, $slug);
+        $planets = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+
+        if($slug === NULL) {
+            $slug = $planets[1]->getSlug();
+        }
+
+        $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
 
         return $this->render(
             'main/notices.html.twig', [
             'planets'        => $planets[0],
             'selectedPlanet' => $planets[1],
             'user'           => $this->getUser(),
-            'messages'       => $this->getMessages($security, $managerRegistry),
+            'messages'       => $this->checkMessagesService->checkMessages(),
+            'production'     => $prodActual,
             'slug'           => $slug,
         ],
         );
@@ -281,16 +279,12 @@ class MainController extends CustomAbstractController
 
     #[Route('/support/ticket_close/{ticketId}/{slug?}', name: 'ticket_close')]
     public function closeTicket(
-        int                    $ticketId,
-        SupportRepository      $supportRepository,
-        EntityManagerInterface $em,
-                               $slug = NULL,
-    ): Response
-    {
-        $ticket = $supportRepository->find($ticketId);
+        int $ticketId,
+            $slug = NULL,
+    ): Response {
+        $ticket = $this->supportRepository->find($ticketId);
         $ticket->setClosed(1);
-        $em->persist($ticket);
-        $em->flush();
+        $this->supportRepository->save($ticket);
 
         return $this->redirectToRoute(
             'support',
@@ -302,19 +296,15 @@ class MainController extends CustomAbstractController
 
     #[Route('/support/ticket_answer/{ticketId}/{slug?}', name: 'ticket_answer')]
     public function answerTicket(
-        int                    $ticketId,
-        SupportRepository      $supportRepository,
-        EntityManagerInterface $em,
-                               $slug = NULL,
-        #[CurrentUser] User    $user,
-    )
-    {
-        $ticket = $supportRepository->find($ticketId);
+        int                 $ticketId,
+        #[CurrentUser] User $user,
+                            $slug = NULL,
+    ) {
+        $ticket = $this->supportRepository->find($ticketId);
         $ticket->setParentMessage($ticket->getSlug());
         $ticket->setProcessedBy($user->getUsername());
         #$ticket->setClosed(1);
-        #$em->persist($ticket);
-        #$em->flush();
+        $this->supportRepository->save($ticket);
 
         return $this->redirectToRoute(
             'support',
@@ -323,6 +313,5 @@ class MainController extends CustomAbstractController
             ],
         );
     }
-
 
 }

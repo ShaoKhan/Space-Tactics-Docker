@@ -63,6 +63,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?DateTimeInterface $logout_on = null;
 
+    #[ORM\ManyToOne(inversedBy: 'members')]
+    private ?Alliance $alliance = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -287,5 +290,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
         // TODO: Implement eraseCredentials() method.
+    }
+
+    public function getAlliance(): ?Alliance
+    {
+        return $this->alliance;
+    }
+
+    public function setAlliance(?Alliance $alliance): static
+    {
+        $this->alliance = $alliance;
+
+        return $this;
     }
 }

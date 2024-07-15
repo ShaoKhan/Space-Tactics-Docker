@@ -47,7 +47,6 @@
 
                                 {% if  science is not empty %}
                                     {% for sc in science %}
-
                                         <div class="building">
                                             <div class="building-headline">
                                                 <span>{{ sc.name|trans }}</span> |
@@ -55,26 +54,21 @@
                                             </div>
                                             <div class="building-content">
                                                 <div class="col-6 building-content-image">
-                                                    {% if sc.image is not empty %}
-                                                        <img src="/{{ sc.image }}" alt="Science image"/>
-                                                    {% else %}
-                                                        <img src="{{ asset('img/science/dummy.jpg') }}" alt="Science image"/>
-                                                    {% endif %}
+                                                    <img src="{{ sc.image|default(asset('img/science/dummy.jpg')) }}" alt="Science image"/>
                                                 </div>
                                                 <div class="col-6 building-content-specs">
-
-                                                    {#<div class="metal">{{ 'metal'|trans({},'resources') }}
-                                                        : {{ sc.BuildCosts.metal }}</div>
+                                                    <div class="metal">{{ 'metal'|trans({},'resources') }}
+                                                        : {{ sc.costMetal }}</div>
                                                     <div class="crystal">{{ 'crystal'|trans({},'resources') }}
-                                                        : {{ sc.BuildCosts.crystal }}</div>
+                                                        : {{ sc.costCrystal }}</div>
                                                     <div class="deuterium">{{ 'deuterium'|trans({},'resources') }}
-                                                        : {{ sc.BuildCosts.deuterium }}</div>#}
+                                                        : {{ sc.costDeuterium }}</div>
                                                 </div>
                                             </div>
                                             <div class="col-12 building-button mt-1">
                                                 <button type="button"
                                                         class="btn btn-light">
-                                                    {{ 'upgrade_to'|trans }} {#{{ nextLevel }}#}
+                                                    {{ 'upgrade_to'|trans }}
                                                 </button>
                                             </div>
                                         </div>

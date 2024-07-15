@@ -13,7 +13,7 @@ class PlanetBuilding
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private ?int $id = NULL;
 
     #[ORM\ManyToOne(targetEntity: Planet::class)]
     #[ORM\JoinColumn(name: 'planet_id', referencedColumnName: 'id', nullable: FALSE)]
@@ -24,13 +24,13 @@ class PlanetBuilding
     private ?Buildings $building_id;
 
     #[ORM\Column]
-    private ?int $building_level = null;
+    private ?int $building_level = NULL;
 
     #[ORM\Column(length: 255)]
-    private ?string $planet_slug = null;
+    private ?string $planet_slug = NULL;
 
     #[ORM\Column(length: 255)]
-    private ?string $building_slug = null;
+    private ?string $building_slug = NULL;
 
     public function __construct()
     {
@@ -64,7 +64,7 @@ class PlanetBuilding
 
     public function addBuildingId(buildings $buildingId): self
     {
-        if (!$this->building_id->contains($buildingId)) {
+        if(!$this->building_id->contains($buildingId)) {
             $this->building_id->add($buildingId);
             $buildingId->setPlanetBuilding($this);
         }
@@ -74,10 +74,10 @@ class PlanetBuilding
 
     public function removeBuildingId(buildings $buildingId): self
     {
-        if ($this->building_id->removeElement($buildingId)) {
+        if($this->building_id->removeElement($buildingId)) {
             // set the owning side to null (unless already changed)
-            if ($buildingId->getPlanetBuilding() === $this) {
-                $buildingId->setPlanetBuilding(null);
+            if($buildingId->getPlanetBuilding() === $this) {
+                $buildingId->setPlanetBuilding(NULL);
             }
         }
 

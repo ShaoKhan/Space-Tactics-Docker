@@ -57,12 +57,13 @@ class IndexController extends CustomAbstractController
     #[Route('/', name: 'index')]
     public function indexAction(
         $slug = NULL,
-        #[CurrentUser] UserInterface $user = NULL,
+        ##[CurrentUser] UserInterface $user = NULL,
     ): Response {
-        if($user !== NULL) {
 
-            $planets = $this->planetService->getPlanetsByPlayer($user, $slug);
+        if($this->isGranted('ROLE_USER'))
+        {
 
+            $planets = $this->planetService->getPlanetsByPlayer($this->user, $slug);
             // Validate the slug using a regex pattern
             $validSlugPattern = '/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}[a-f0-9]$/';
             if($slug === NULL || !preg_match($validSlugPattern, $slug)) {
@@ -70,7 +71,7 @@ class IndexController extends CustomAbstractController
             }
 
             // Retrieve planet data
-            $planet = $this->planetRepository->findOneBy(['user_uuid' => $user->getUuid(), 'slug' => $slug]);
+            $planet = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
 
             // Calculate production
             $production = $this->buildingCalculationService->calculateActualBuildingProduction(
@@ -87,7 +88,7 @@ class IndexController extends CustomAbstractController
                     'planets'        => $planets[0],
                     'selectedPlanet' => $planets[1],
                     'planetData'     => $planets[2],
-                    'user'           => $user,
+                    'user'           => $this->user,
                     'messages'       => $this->getMessages($this->security, $this->managerRegistry),
                     'slug'           => $slug,
                     'production'     => $production,

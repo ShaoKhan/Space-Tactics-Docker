@@ -18,8 +18,11 @@ use App\Repository\PlanetRepository;
 use App\Repository\UniRepository;
 use App\Repository\UserRepository;
 use App\Service\BuildingCalculationService;
+use App\Service\CheckMessagesService;
+use App\Service\PlanetService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,8 +31,19 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class GalaxymapController extends CustomAbstractController
 {
-    use Traits\MessagesTrait;
-    use Traits\PlanetsTrait;
+    public function __construct(
+        protected readonly PlanetRepository           $planetRepository,
+        protected readonly BuildingCalculationService $buildingCalculationService,
+        protected readonly CheckMessagesService       $checkMessagesService,
+        protected readonly PlanetService              $planetService,
+        protected readonly ManagerRegistry            $managerRegistry,
+        protected readonly UniRepository              $uniRepository,
+        protected readonly UserRepository             $userRepository,
+        LoggerInterface                               $logger,
+        Security                                      $security,
+    ) {
+        parent::__construct($security, $logger);
+    }
 
     #[Route('/galaxymap/{slug?}', name: 'galaxymap')]
     public function index(
@@ -41,15 +55,14 @@ class GalaxymapController extends CustomAbstractController
         Security                   $security,
                                    $slug = NULL,
 
-    ): Response
-    {
+    ): Response {
 
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets = $this->getPlanetsByPlayer($managerRegistry, $this->user_uuid, $slug);
-        $res = $p->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-        $prodActual = $bcs->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $managerRegistry);
+        $planets    = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
 
-        $uniDimensions = $ur->getUniDimensions()[0];
+        $uniDimensions = $this->uniRepository->getUniDimensions()[0];
 
         if($request->get('slug') !== NULL) {
             $slug = $request->get('slug');
@@ -57,23 +70,20 @@ class GalaxymapController extends CustomAbstractController
 
         if($uniDimensions["galaxy_width"] <= 50 && $uniDimensions["galaxy_height"] <= 50) {
             $uniDimensions['itemsize'] = 27;
-            $uniDimensions['break'] = 50;
+            $uniDimensions['break']    = 50;
 
-        }
-        elseif($uniDimensions["galaxy_width"] <= 100 && $uniDimensions["galaxy_height"] <= 100) {
+        } elseif($uniDimensions["galaxy_width"] <= 100 && $uniDimensions["galaxy_height"] <= 100) {
             $uniDimensions['itemsize'] = 13;
-            $uniDimensions['break'] = 100;
-        }
-        elseif($uniDimensions["galaxy_width"] <= 200 && $uniDimensions["galaxy_height"] <= 200) {
+            $uniDimensions['break']    = 100;
+        } elseif($uniDimensions["galaxy_width"] <= 200 && $uniDimensions["galaxy_height"] <= 200) {
             $uniDimensions['itemsize'] = 6.7;
-            $uniDimensions['break'] = 200;
-        }
-        else {
+            $uniDimensions['break']    = 200;
+        } else {
             $uniDimensions['itemsize'] = 0;
-            $uniDimensions['break'] = 0;
+            $uniDimensions['break']    = 0;
         }
 
-        $coords = $p->getAllCoords();
+        $coords = $this->planetRepository->getAllCoords();
 
         return $this->render(
             'galaxymap/index.html.twig', [
@@ -81,7 +91,7 @@ class GalaxymapController extends CustomAbstractController
             'selectedPlanet' => $planets[1],
             'planetData'     => $planets[2],
             'user'           => $this->getUser(),
-            'messages'       => $this->getMessages($security, $managerRegistry),
+            'messages'       => $this->checkMessagesService->checkMessages(),
             'dimensions'     => $uniDimensions,
             'coords'         => $coords,
             'slug'           => $slug,
@@ -93,11 +103,7 @@ class GalaxymapController extends CustomAbstractController
     #[Route('/system-info', name: 'system-info')]
     public function ajaxGetSystemInfo(
         Request                $request,
-        EntityManagerInterface $emi,
-        PlanetRepository       $p,
-        UserRepository         $ur,
-    ): JsonResponse
-    {
+    ): JsonResponse {
 
         if(!$request->isXmlHttpRequest()) {
 
@@ -115,7 +121,7 @@ class GalaxymapController extends CustomAbstractController
             $x = intval($request->request->get('x'));
             $y = intval($request->request->get('y'));
 
-            $planet = $p->findBy(
+            $planet = $this->planetRepository->findBy(
                 [
                     'system_x' => $x,
                     'system_y' => $y,
@@ -123,34 +129,36 @@ class GalaxymapController extends CustomAbstractController
             );
 
             $planets = [];
+
             foreach($planet as $playerPlanet) {
 
-                $user = $ur->findOneBy(
-                    [
-                        'uuid' => $playerPlanet->getUserUuid(),
-                    ],
-                );
+//                $user = $this->uniRepository->findOneBy(
+//                    [
+//                        'uuid' => $playerPlanet->getUserUuid(),
+//                    ],
+//                );
+
 
                 $planets[] = [
-                    'id'    => $user->getUuid(),
+                    'id'    => $this->user_uuid,
                     'name'  => $playerPlanet->getName(),
-                    'user'  => $user->getUsername(),
+                    'user'  => $planet[0]->getUserUuid(),
                     'z'     => $playerPlanet->getSystemZ(),
                     'pslug' => $playerPlanet->getSlug(),
                 ];
             }
 
-            if($planets !== NULL) {
-
-                return new JsonResponse(
-                    [
-                        'status'  => 'success',
-                        'user'    => $p->getUserUuid(),
-                        'message' => $planets,
-                    ],
-                    200,
-                );
-            }
+//            if($planets !== NULL) {
+//
+//                return new JsonResponse(
+//                    [
+//                        'status'  => 'success',
+//                        'user'    => $this->user,
+//                        'message' => $planets,
+//                    ],
+//                    200,
+//                );
+//            }
         }
 
         return new JsonResponse(
@@ -167,8 +175,7 @@ class GalaxymapController extends CustomAbstractController
     public function addFriend(
         UserRepository  $userRepo,
         ManagerRegistry $emi,
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $this->denyAccessUnlessGranted('ROLE_USER');
         $srcId = $this->getUser()->getUuid();
 
@@ -176,7 +183,7 @@ class GalaxymapController extends CustomAbstractController
             $targetId = $request->request->get('slug');
         }
 
-        if($userRepo->addFriend($srcId, $targetId, $emi)) {
+        if($this->userRepository->addFriend($srcId, $targetId, $emi)) {
             return new JsonResponse(
                 [
                     'status'  => 'success',
@@ -184,8 +191,7 @@ class GalaxymapController extends CustomAbstractController
                 ],
                 200,
             );
-        }
-        else {
+        } else {
             return new JsonResponse(
                 [
                     'status'  => 'Error',

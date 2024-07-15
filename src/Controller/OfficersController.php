@@ -4,32 +4,38 @@ namespace App\Controller;
 
 use App\Repository\PlanetRepository;
 use App\Service\BuildingCalculationService;
+use App\Service\CheckMessagesService;
+use App\Service\PlanetService;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class OfficersController extends CustomAbstractController
 {
-    use Traits\MessagesTrait;
-    use Traits\PlanetsTrait;
+
+    public function __construct(
+        protected readonly PlanetRepository           $planetRepository,
+        protected readonly BuildingCalculationService $buildingCalculationService,
+        protected readonly CheckMessagesService       $checkMessagesService,
+        protected readonly PlanetService              $planetService,
+        protected readonly ManagerRegistry            $managerRegistry,
+        LoggerInterface                               $logger,
+        Security                                      $security,
+    ) {
+        parent::__construct($security, $logger);
+    }
 
     #[Route('/officers/{slug?}', name: 'officers')]
     public function index(
-        ManagerRegistry            $managerRegistry,
-        PlanetRepository           $p,
-        BuildingCalculationService $bcs,
-        Security                   $security,
-        Request                    $request,
-                                   $slug = NULL,
-    ): Response
-    {
-        $user_uuid = $security->getUser()->getUuid();
+        $slug = NULL,
+    ): Response {
+
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets = $this->getPlanetsByPlayer($managerRegistry, $this->user_uuid, $slug);
-        $res = $p->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-        $prodActual = $bcs->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $managerRegistry);
+        $planets    = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
 
         return $this->render(
             'officers/index.html.twig', [
@@ -37,7 +43,7 @@ class OfficersController extends CustomAbstractController
             'selectedPlanet' => $planets[1],
             'planetData'     => $planets[2],
             'user'           => $this->getUser(),
-            'messages'       => $this->getMessages($security, $managerRegistry),
+            'messages'       => $this->checkMessagesService->checkMessages(),
             'slug'           => $slug,
             'production'     => $prodActual,
         ],
