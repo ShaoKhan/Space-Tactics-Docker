@@ -3,48 +3,59 @@
 namespace App\Entity;
 
 use App\Repository\AllianceRepository;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\HttpFoundation\File\File;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
+
+#[Vich\Uploadable]
 #[ORM\Entity(repositoryClass: AllianceRepository::class)]
 class Alliance
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private ?int $id = NULL;
 
     #[ORM\Column(length: 255)]
-    private ?string $slug = null;
+    private ?string $slug = NULL;
 
     #[ORM\Column(length: 255)]
-    private ?string $name = null;
+    private ?string $name = NULL;
 
-    #[ORM\Column(length: 5, nullable: true)]
-    private ?string $alliance_ta = null;
+    #[ORM\Column(length: 5, nullable: TRUE)]
+    private ?string $alliance_tag = NULL;
 
     /**
-     * @var Collection<int, user>
+     * @var Collection<int, User>
      */
-    #[ORM\OneToMany(targetEntity: user::class, mappedBy: 'alliance')]
+    #[ORM\OneToMany(targetEntity: User::class, mappedBy: 'alliance')]
     private Collection $members;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $headline = null;
+    #[ORM\Column(length: 255, nullable: TRUE)]
+    private ?string $headline = NULL;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $description = null;
+    #[ORM\Column(type: Types::TEXT, nullable: TRUE)]
+    private ?string $description = NULL;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $url = null;
+    #[ORM\Column(length: 255, nullable: TRUE)]
+    private ?string $url = NULL;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $logo = null;
+    #[Vich\UploadableField(mapping: 'alliance', fileNameProperty: 'logoName', size: 'logoSize')]
+    private ?File $logo = NULL;
 
-    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
-    private ?user $leader = null;
+    #[ORM\Column(nullable: TRUE)]
+    private ?string $logoName = NULL;
+
+    #[ORM\Column(nullable: TRUE)]
+    private ?int $logoSize = NULL;
+
+    #[ORM\Column(nullable: TRUE)]
+    private ?DateTimeImmutable $updatedAt = NULL;
 
     public function __construct()
     {
@@ -80,14 +91,14 @@ class Alliance
         return $this;
     }
 
-    public function getAllianceTa(): ?string
+    public function getAllianceTag(): ?string
     {
-        return $this->alliance_ta;
+        return $this->alliance_tag;
     }
 
-    public function setAllianceTa(?string $alliance_ta): static
+    public function setAllianceTag(?string $alliance_tag): static
     {
-        $this->alliance_ta = $alliance_ta;
+        $this->alliance_tag = $alliance_tag;
 
         return $this;
     }
@@ -102,7 +113,7 @@ class Alliance
 
     public function addMember(user $member): static
     {
-        if (!$this->members->contains($member)) {
+        if(!$this->members->contains($member)) {
             $this->members->add($member);
             $member->setAlliance($this);
         }
@@ -112,10 +123,10 @@ class Alliance
 
     public function removeMember(user $member): static
     {
-        if ($this->members->removeElement($member)) {
+        if($this->members->removeElement($member)) {
             // set the owning side to null (unless already changed)
-            if ($member->getAlliance() === $this) {
-                $member->setAlliance(null);
+            if($member->getAlliance() === $this) {
+                $member->setAlliance(NULL);
             }
         }
 
@@ -158,27 +169,40 @@ class Alliance
         return $this;
     }
 
-    public function getLogo(): ?string
+    public function getLogo(): ?File
     {
         return $this->logo;
     }
 
-    public function setLogo(?string $logo): static
+    public function setLogo(?File $logo = NULL): void
     {
         $this->logo = $logo;
 
-        return $this;
+        if(NULL !== $logo) {
+            // It is required that at least one field changes if you are using doctrine
+            // otherwise the event listeners won't be called and the file is lost
+            $this->updatedAt = new DateTimeImmutable();
+        }
     }
 
-    public function getLeader(): ?user
+    public function getLogoName(): ?string
     {
-        return $this->leader;
+        return $this->logoName;
     }
 
-    public function setLeader(?user $leader): static
+    public function setLogoName(?string $logoName): void
     {
-        $this->leader = $leader;
-
-        return $this;
+        $this->logoName = $logoName;
     }
+
+    public function getLogoSize(): ?int
+    {
+        return $this->logoSize;
+    }
+
+    public function setLogoSize(?int $logoSize): void
+    {
+        $this->logoSize = $logoSize;
+    }
+
 }
