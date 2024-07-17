@@ -4,10 +4,12 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use DateTimeInterface;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Doctrine\Common\Collections\ArrayCollection;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 ##[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
@@ -63,8 +65,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?DateTimeInterface $logout_on = null;
 
-    #[ORM\ManyToOne(inversedBy: 'members')]
-    private ?Alliance $alliance = null;
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $alliance = null;
 
     public function getId(): ?int
     {
@@ -287,20 +289,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function eraseCredentials(): void
-    {
-        // TODO: Implement eraseCredentials() method.
-    }
-
-    public function getAlliance(): ?Alliance
+    public function getAlliance(): ?string
     {
         return $this->alliance;
     }
 
-    public function setAlliance(?Alliance $alliance): static
+    public function setAlliance(?string $alliance): void
     {
         $this->alliance = $alliance;
+    }
 
-        return $this;
+    public function eraseCredentials(): void
+    {
+        // TODO: Implement eraseCredentials() method.
     }
 }

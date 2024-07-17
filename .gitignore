@@ -39,5 +39,4 @@
 /var/
 /vendor/
 ###< symfony/framework-bundle ###
-.idea/workspace.xml
-.idea/
+.idea/*
