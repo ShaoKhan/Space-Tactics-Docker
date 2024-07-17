@@ -4,7 +4,6 @@ namespace App\Form;
 
 use App\Entity\Alliance;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -12,9 +11,10 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Constraints\Length;
-use Vich\UploaderBundle\Form\Type\VichFileType;
 use Vich\UploaderBundle\Form\Type\VichImageType;
+
 
 class AllianceType extends AbstractType
 {
@@ -72,24 +72,28 @@ class AllianceType extends AbstractType
             ->add(
                 'url', UrlType::class,
                 [
-                    'label'    => 'Webseite',
-                    'attr'     => [
+                    'label'       => 'Webseite',
+                    'attr'        => [
                         'class' => 'form-control',
                     ],
-                    'required' => FALSE,
+                    'required'    => FALSE,
+                    'constraints' => [
+                        new Assert\Url(['message' => 'Die URL ist ungültig.']),
+                    ],
+
                 ],
             )
             ->add('logo', VichImageType::class, [
-                'label'    => 'Logo',
-                'allow_delete' => false,
-                'delete_label' => false,
-                'download_uri' => false,
-                'download_label' => false,
-                'asset_helper' => false,
-                'attr'     => [
-                    'class' => 'form-control alliance_logo',
+                'label'          => 'Logo',
+                'allow_delete'   => FALSE,
+                'delete_label'   => FALSE,
+                'download_uri'   => FALSE,
+                'download_label' => FALSE,
+                'asset_helper'   => FALSE,
+                'attr'           => [
+                    'class' => 'form-control',
                 ],
-                'required' => FALSE,
+                'required'       => FALSE,
             ])
             ->add(
                 'save', SubmitType::class, [
