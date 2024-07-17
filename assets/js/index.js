@@ -1,0 +1,1 @@
+import '../../websrc/js/index'
