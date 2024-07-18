@@ -13835,11 +13835,12 @@ section:last-child,
 }
 
 .alliance_logo {
-  width: 100%;
-  height: 100%;
+  width: 300px;
+  height: auto;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
+  object-fit: cover;
 }
 
 .container-fluid, .container-sm, .container-md, .container-lg, .container-xl, .container-xxl {

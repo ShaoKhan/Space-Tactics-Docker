@@ -4,7 +4,9 @@ namespace App\Controller;
 
 
 use App\Entity\Alliance;
+use App\Entity\AllianceMember;
 use App\Form\AllianceType;
+use App\Repository\AllianceMemberRepository;
 use App\Repository\AllianceRepository;
 use App\Repository\PlanetRepository;
 use App\Repository\UniRepository;
@@ -30,6 +32,7 @@ class AllianceController extends CustomAbstractController
     public function __construct(
         protected readonly BuildingCalculationService  $buildingCalculationService,
         protected readonly AllianceRepository          $allianceRepository,
+        protected readonly AllianceMemberRepository    $allianceMemberRepository,
         protected readonly CheckMessagesService        $checkMessagesService,
         protected readonly EmailVerifier               $emailVerifier,
         protected readonly ManagerRegistry             $managerRegistry,
@@ -53,56 +56,78 @@ class AllianceController extends CustomAbstractController
                 $slug = NULL,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets    = $this->planetService->getPlanetsByPlayer($this->user, $slug);
-        $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
+        //ToDo: Das scheint noch ziemlich buggy irgendwie.
 
-        $uniData              = $this->uniRepository->findOneBy(['id' => $this->user->getUni()]);
-        $allianceUuid         = Uuid::v4();
-        $alliance             = $this->allianceRepository->findOneBy(['slug' => $this->user->getAlliance()]) ?? NULL;
-        $allowAllianceFounder = FALSE;
+        $members          = [];
+        $planets          = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $res              = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
+        $prodActual       = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
+        $canFoundAlliance = FALSE;
+        $uniData          = $this->uniRepository->findOneBy(['id' => $this->user->getUni()]);
+        $alliance         = $this->allianceRepository->findOneBy(['slug' => $this->user->getAlliance()]) ?? NULL;
+        $allianceRank     = $this->allianceMemberRepository->findOneBy(['user_slug' => $this->user->getUuid()]);
+        $allianceUuid     = Uuid::v4();
 
+        if($alliance !== NULL) {
+            $allianceUuid = $alliance->getSlug();
+            $memberSlugs  = $this->allianceMemberRepository->findBy(['alliance_slug' => $this->user->getAlliance()]);
+
+            foreach($memberSlugs as $memberSlug) {
+                $members[] = $this->userRepository->findOneBy(['uuid' => $memberSlug->getUserSlug()]);
+            }
+        }
         if($this->userService->calculateTotalPoints($this->user) > $uniData->getAllianceMinPoints() && $alliance === NULL) {
-            $allowAllianceFounder = TRUE;
+            $canFoundAlliance = TRUE;
         }
 
         $form = $this->createForm(
             AllianceType::class, $alliance,
             [
-                'uuid' => $allianceUuid,
+                'uuid'   => $allianceUuid,
+                'update' => $alliance !== NULL,
             ],
         );
         $form->handleRequest($request);
         if($form->isSubmitted() && $form->isValid()) {
-            /** @var Alliance $alliance */
-            $alliance = $form->getData();
-            $alliance->setSlug($allianceUuid);
-            $alliance->setName($form->get('name')->getData());
-            $alliance->setAllianceTag($form->get('allianceTag')->getData());
-            $alliance->setHeadline($form->get('headline')->getData());
-            $alliance->setDescription($form->get('description')->getData());
-            $alliance->setUrl($form->get('url')->getData());
-            $alliance->setLogo($form->get('logo')->getData());
+            /** @var Alliance $allianceFromForm */
+            $allianceFromForm = $form->getData();
+            $allianceFromForm->setSlug($allianceUuid);
+            $allianceFromForm->setName($form->get('name')->getData());
+            $allianceFromForm->setAllianceTag($form->get('allianceTag')->getData());
+            $allianceFromForm->setHeadline($form->get('headline')->getData());
+            $allianceFromForm->setDescription($form->get('description')->getData());
+            $allianceFromForm->setUrl($form->get('url')->getData());
+            $allianceFromForm->setLogo($form->get('logo')->getData());
 
+            if($alliance === NULL) {
+                $alliancemember = new AllianceMember();
+                $alliancemember->setAllianceSlug($allianceUuid);
+                $alliancemember->setUserSlug($this->user->getUuid());
+                $alliancemember->setJoinedOn(new \DateTime());
+                $alliancemember->setRanking('ROLE_ALLIANCE_FOUNDER');
+                $this->allianceMemberRepository->save($alliancemember, TRUE);
+            }
             $this->user->setAlliance($allianceUuid);
-            $this->allianceRepository->save($alliance, TRUE);
+            $this->allianceRepository->save($allianceFromForm, TRUE);
             $this->userRepository->save($this->user, TRUE);
             $this->addFlash('success', 'Allianz erfolgreich erstellt.');
         }
 
         return $this->render(
             'alliance/index.html.twig', [
-            'planets'              => $planets[0],
-            'selectedPlanet'       => $planets[1],
-            'planetData'           => $planets[2],
-            'user'                 => $this->getUser(),
-            'messages'             => $this->checkMessagesService->checkMessages(),
-            'slug'                 => $slug,
-            'production'           => $prodActual,
-            'form'                 => $form->createView(),
-            'allianceUuid'         => $allianceUuid,
-            'allianceData'         => $alliance,
-            'allowAllianceFounder' => $allowAllianceFounder,
+            'planets'          => $planets[0],
+            'selectedPlanet'   => $planets[1],
+            'planetData'       => $planets[2],
+            'user'             => $this->getUser(),
+            'messages'         => $this->checkMessagesService->checkMessages(),
+            'slug'             => $slug,
+            'production'       => $prodActual,
+            'form'             => $form->createView(),
+            'allianceUuid'     => $allianceUuid,
+            'allianceData'     => $alliance,
+            'canFoundAlliance' => $canFoundAlliance,
+            'allianceRank'     => $allianceRank,
+            'members'          => $members,
 
         ],
         );
@@ -112,10 +137,20 @@ class AllianceController extends CustomAbstractController
     public function leaveAlliance(
         $slug = NULL,
     ): Response {
+
+        //check if user is in this alliance
         $alliance = $this->allianceRepository->findOneBy(['slug' => $this->user->getAlliance()]);
         if($alliance) {
+            //check if user is the last one in the alliance
+            $member = $this->allianceMemberRepository->findBy(['alliance_slug' => $alliance->getSlug()]);
+            if($member->getUserSlug() === $this->user->getUuid() && $member->getRanking() === 'ROLE_ALLIANCE_FOUNDER' && count($member) === 1) {
+                $this->allianceRepository->deleteByAllianceSlug($alliance, TRUE);
+            }
+
             $this->user->setAlliance(NULL);
             $this->userRepository->save($this->user, TRUE);
+            $this->allianceMemberRepository->deleteByUserSlug($this->user);
+
             $this->addFlash('success', 'Allianz erfolgreich verlassen.');
         }
 

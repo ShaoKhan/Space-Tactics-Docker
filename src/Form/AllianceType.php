@@ -51,7 +51,7 @@ class AllianceType extends AbstractType
             ->add(
                 'headline', TextType::class,
                 [
-                    'label'    => 'Überschrift',
+                    'label'    => 'Teaser',
                     'attr'     => [
                         'class' => 'form-control',
                     ],
@@ -97,7 +97,7 @@ class AllianceType extends AbstractType
             ])
             ->add(
                 'save', SubmitType::class, [
-                'label' => 'Allianz gründen',
+                'label' => $options["update"] === false ? 'Allianz gründen' : 'Allianz bearbeiten',
                 'attr'  => [
                     'class' => 'btn btn-primary mt-2',
                 ],
@@ -112,6 +112,7 @@ class AllianceType extends AbstractType
             [
                 'data_class' => Alliance::class,
                 'uuid'       => NULL,
+                'update'     => FALSE,
             ],
         );
     }

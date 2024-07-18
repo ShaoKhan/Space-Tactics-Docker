@@ -57,6 +57,7 @@ class Alliance
     #[ORM\Column(nullable: TRUE)]
     private ?DateTimeImmutable $updatedAt = NULL;
 
+
     public function __construct()
     {
         $this->members = new ArrayCollection();
@@ -99,36 +100,6 @@ class Alliance
     public function setAllianceTag(?string $alliance_tag): static
     {
         $this->alliance_tag = $alliance_tag;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, user>
-     */
-    public function getMembers(): Collection
-    {
-        return $this->members;
-    }
-
-    public function addMember(user $member): static
-    {
-        if(!$this->members->contains($member)) {
-            $this->members->add($member);
-            $member->setAlliance($this);
-        }
-
-        return $this;
-    }
-
-    public function removeMember(user $member): static
-    {
-        if($this->members->removeElement($member)) {
-            // set the owning side to null (unless already changed)
-            if($member->getAlliance() === $this) {
-                $member->setAlliance(NULL);
-            }
-        }
 
         return $this;
     }

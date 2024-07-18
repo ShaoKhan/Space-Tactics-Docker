@@ -49,4 +49,24 @@ class AllianceRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+
+    public function deleteByUserSlug($user): void
+    {
+        $this->createQueryBuilder('a')
+             ->delete()
+             ->where('a.user_slug = :user')
+             ->setParameter('user', $user->getUuid())
+             ->getQuery()
+             ->execute();
+    }
+
+    public function deleteByAllianceSlug($alliance): void
+    {
+        $this->createQueryBuilder('a')
+             ->delete()
+             ->where('a.alliance_slug = :alliance')
+             ->setParameter('alliance', $alliance->getAllianceSlug())
+             ->getQuery()
+             ->execute();
+    }
 }
