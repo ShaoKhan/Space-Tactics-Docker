@@ -1,6 +1,8 @@
 {% extends 'base.html.twig' %}
+{% trans_default_domain 'alliance' %}
 
-{% block title %}Space-Tactics Main{% endblock %}
+
+{% block title %}Space-Tactics {{ 'alliance'|trans }} {% endblock %}
 
 {% block body %}
     <!-- Main Menu -->
@@ -43,116 +45,76 @@
                         <div class="row">
                             <div class="col-lg-6">
                                 {% if allianceData is null %}
-                                <div class="alert alert-primary" role="alert">
-                                    Hier ist dein Platz um Allianzen zu schmieden.
-                                </div>
-                                {% else %}
-                                    {% for label, messages in app.flashes %}
-                                        {% for message in messages %}
-                                            <div class="alert alert-{{ label }}">
-                                                {{ message }}
-                                            </div>
-                                        {% endfor %}
-                                    {% endfor %}
+                                    <div class="alert alert-primary" role="alert">
+                                        Hier ist dein Platz um Allianzen zu schmieden ...
+                                    </div>
+
+                                    {% if not canFoundAlliance %}
+                                        <div class="alert alert-danger" role="alert">
+                                            ... aber du hast noch nicht genug Punkte. Bleib dran!
+                                        </div>
+                                    {% endif %}
+
                                 {% endif %}
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-6">
-                                {{ form_start(form) }}
-                                {% if form_errors(form) %}
-                                    <div class="alert alert-danger">
-                                        {% for error in form_errors(form) %}
-                                            <p>{{ error.message }}</p>
-                                        {% endfor %}
-                                    </div>
+                                {% if canFoundAlliance or allianceRank.ranking == 'ROLE_ALLIANCE_FOUNDER' %}
+                                    {{ form_start(form) }}
+                                    {% if form_errors(form) %}
+                                        <div class="alert alert-danger">
+                                            {% for error in form_errors(form) %}
+                                                <p>{{ error.message }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {{ form_row(form.name) }}
+                                    {{ form_row(form.allianceTag) }}
+                                    {{ form_row(form.headline) }}
+                                    {{ form_row(form.description) }}
+                                    {{ form_row(form.url) }}
+                                    {{ form_row(form.logo) }}
+                                    {{ form_row(form.save) }}
+                                    {{ form_end(form) }}
                                 {% endif %}
-                                <div class="row">
-                                    <div class="col-lg-8">
-                                        {{ form_row(form.name) }}
-                                    </div>
-                                    <div class="col-lg-4">
-                                        {{ form_row(form.allianceTag) }}
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        {{ form_row(form.headline) }}
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        {{ form_row(form.description) }}
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        {{ form_row(form.url) }}
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        {{ form_row(form.logo) }}
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        {{ form_row(form.save) }}
-                                    </div>
-                                </div>
-                                {{ form_end(form) }}
                             </div>
                             <div class="col-6">
-                                <h5 class="row">
-                                    {% if allianceData is not null %}
-                                        <h3 class="">
-                                            <strong>{{ allianceData.getName }}</strong>
-                                            <span class="">[{{ allianceData.getAllianceTag }}]</span>
-                                        </h3>
-                                        <h4>{{ allianceData.getHeadline }}</h4>
+                                {% if allianceData is not null %}
+                                    {% if allianceData.logoName is not null %}
+                                        <img src="{{ asset('img/alliance/logos/' ~ allianceData.logoName) }}"
+                                             alt="{{ allianceData.getName }} Logo" class="alliance_logo"/>
+                                    {% endif %}
 
-                                        <div style="
-                                            height: 400px;
-                                            width: 100%;
-                                            background-image: url({{ asset('img/alliance/logos/' ~ allianceData.logoName) }}
-                                            );
-                                            background-size: cover;
-                                            background-position: center;
-                                            background-repeat: no-repeat;
-                                            position: relative;
-                                            display: flex;
-                                            justify-content: center;
-                                            align-items: center;
-                                            ">
-                                            <div style="
-                                                        position: absolute;
-                                                        top: 0;
-                                                        left: 0;
-                                                        right: 0;
-                                                        bottom: 0;
-                                                        background: rgba(0, 0, 0, 0.5); /* Change the opacity as needed */
-                                                        display: flex;
-                                                        justify-content: center;
-                                                        align-items: center;
-                                                    ">
-                                                {{ allianceData.getDescription }}
+                                    <h3 class="mt-3">{{ 'alliance_members'|trans }}</h3>
+
+                                    {% for member in members %}
+                                        <div class="row">
+                                            <div class="col-4">
+                                                {{ member.getUsername }}
+                                            </div>
+                                            <div class="col-2">
+                                                <a href="#">Nachricht</a>
                                             </div>
                                         </div>
-                                        <div>{{ allianceData.getUrl|default(null) }}</div>
-                                    {% endif %}
+
+                                    {% endfor %}
+
+                                    <p>
+                                        <a href="{{ path('leave_alliance', {'slug': selectedPlanet.slug}) }}">
+                                            {{ 'leave_alliance'|trans }}
+                                        </a>
+                                    </p>
+                                {% endif %}
                             </div>
                         </div>
+                    </section>
                 </div>
+            </div>
+        </div>
     </section>
-    </div>
-    </div>
-    </div>
-    </section>
+
 
     {% include 'parts/footer.html.twig' %}
 {% endblock %}

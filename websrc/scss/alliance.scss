@@ -1,6 +1,14 @@
-.alliance_logo_file {
-    width: 200px;
-    height: 200px;
-    border-radius: 10px;
-    display: block;
+.vich-image{
+    img{
+        display: none;
+    }
+}
+
+.alliance_logo{
+    width: 300px;
+    height: auto;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    object-fit: cover;
 }

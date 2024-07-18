@@ -303,4 +303,5 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         // TODO: Implement eraseCredentials() method.
     }
+
 }

@@ -59,4 +59,11 @@ class UserService
         return $sciencePoints;
     }
 
+    public function calculateTotalPoints($user):int
+    {
+        $buildingPoints = $this->calculateBuildingPoints($user);
+        $sciencePoints = $this->calculateSciencePoints($user);
+        return $buildingPoints + $sciencePoints;
+    }
+
 }
