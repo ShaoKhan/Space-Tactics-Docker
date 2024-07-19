@@ -70,9 +70,16 @@ class Buildings
 
     private array $properties = [];
 
+    /**
+     * @var Collection<int, ScienceDependencies>
+     */
+    #[ORM\OneToMany(targetEntity: ScienceDependencies::class, mappedBy: 'required_building_id')]
+    private Collection $scienceDependencies;
+
     public function __construct()
     {
         $this->buildingsQueues = new ArrayCollection();
+        $this->scienceDependencies = new ArrayCollection();
     }
 
     /**
@@ -326,6 +333,36 @@ class Buildings
     public function __get($name)
     {
         return $this->properties[$name] ?? null;
+    }
+
+    /**
+     * @return Collection<int, ScienceDependencies>
+     */
+    public function getScienceDependencies(): Collection
+    {
+        return $this->scienceDependencies;
+    }
+
+    public function addScienceDependency(ScienceDependencies $scienceDependency): static
+    {
+        if (!$this->scienceDependencies->contains($scienceDependency)) {
+            $this->scienceDependencies->add($scienceDependency);
+            $scienceDependency->setRequiredBuildingId($this);
+        }
+
+        return $this;
+    }
+
+    public function removeScienceDependency(ScienceDependencies $scienceDependency): static
+    {
+        if ($this->scienceDependencies->removeElement($scienceDependency)) {
+            // set the owning side to null (unless already changed)
+            if ($scienceDependency->getRequiredBuildingId() === $this) {
+                $scienceDependency->setRequiredBuildingId(null);
+            }
+        }
+
+        return $this;
     }
 
 }

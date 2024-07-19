@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\SciencesRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: SciencesRepository::class)]
@@ -46,7 +48,16 @@ class Sciences
     #[ORM\Column(length: 255)]
     private ?string $slug = null;
 
-    public function __construct() {}
+    /**
+     * @var Collection<int, ScienceDependencies>
+     */
+    #[ORM\OneToMany(targetEntity: ScienceDependencies::class, mappedBy: 'science_id')]
+    private Collection $scienceDependencies;
+
+    public function __construct()
+    {
+        $this->scienceDependencies = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -181,6 +192,36 @@ class Sciences
     public function setSlug(string $slug): static
     {
         $this->slug = $slug;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ScienceDependencies>
+     */
+    public function getScienceDependencies(): Collection
+    {
+        return $this->scienceDependencies;
+    }
+
+    public function addScienceDependency(ScienceDependencies $scienceDependency): static
+    {
+        if (!$this->scienceDependencies->contains($scienceDependency)) {
+            $this->scienceDependencies->add($scienceDependency);
+            $scienceDependency->setScienceId($this);
+        }
+
+        return $this;
+    }
+
+    public function removeScienceDependency(ScienceDependencies $scienceDependency): static
+    {
+        if ($this->scienceDependencies->removeElement($scienceDependency)) {
+            // set the owning side to null (unless already changed)
+            if ($scienceDependency->getScienceId() === $this) {
+                $scienceDependency->setScienceId(null);
+            }
+        }
 
         return $this;
     }

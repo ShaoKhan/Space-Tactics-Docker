@@ -13,7 +13,7 @@ class BuildingDependency
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
-    private $id;
+    private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Buildings::class)]
     #[ORM\JoinColumn(name: "building_id", referencedColumnName: "id", nullable: false)]
@@ -21,23 +21,28 @@ class BuildingDependency
 
     #[ORM\ManyToOne(targetEntity: Buildings::class)]
     #[ORM\JoinColumn(name: "required_building_id", referencedColumnName: "id", nullable: true)]
-    private $requiredBuilding;
+    private $requiredBuilding = null;
 
     #[ORM\Column(type: "integer", nullable: true)]
-    private $requiredBuildingLevel;
+    private $requiredBuildingLevel = null;
 
     #[ORM\ManyToOne(targetEntity: Sciences::class)]
     #[ORM\JoinColumn(name: "required_science_id", referencedColumnName: "id", nullable: true)]
-    private $requiredScience;
+    private $requiredScience = null;
 
     #[ORM\Column(type: "integer", nullable: true)]
-    private $requiredScienceLevel;
+    private $requiredScienceLevel = null;
 
     // Getters and setters for the above properties
 
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function setId(?int $id): void
+    {
+        $this->id = $id;
     }
 
     /**
@@ -73,9 +78,9 @@ class BuildingDependency
     }
 
     /**
-     * @return mixed
+     * @return int|null
      */
-    public function getRequiredBuildingLevel()
+    public function getRequiredBuildingLevel(): ?int
     {
         return $this->requiredBuildingLevel;
     }
@@ -83,15 +88,12 @@ class BuildingDependency
     /**
      * @param mixed $requiredBuildingLevel
      */
-    public function setRequiredBuildingLevel($requiredBuildingLevel): void
+    public function setRequiredBuildingLevel(?int $requiredBuildingLevel): void
     {
         $this->requiredBuildingLevel = $requiredBuildingLevel;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getRequiredScience()
+    public function getRequiredScience():null
     {
         return $this->requiredScience;
     }
