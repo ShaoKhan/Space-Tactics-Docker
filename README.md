@@ -1,59 +1,52 @@
-# Symfony Docker
+# Space Tactics Docker
+### Based on Symfony Docker with frankenPHP i refactored the old project and will use it in a docker enviroment.
 
-A [Docker](https://www.docker.com/)-based installer and runtime for the [Symfony](https://symfony.com) web framework,
-with [FrankenPHP](https://frankenphp.dev) and [Caddy](https://caddyserver.com/) inside!
+## Mitwirkende
+Wir freuen uns über Beiträge! Bitte erstelle einen Fork des Repositories und öffne einen Pull Request, um Änderungen vorzuschlagen.
 
-![CI](https://github.com/dunglas/symfony-docker/workflows/CI/badge.svg)
+## Lizenz
+Dieses Projekt steht unter der MIT-Lizenz. Weitere Informationen findest du in der Datei LICENSE.
 
-- Web: http://localhost
-- Mailhog: http://localhost:8025
-- phpMyAdmin: http://localhost:8080
+Willkommen im offiziellen Docker-Repository für **Space Tactics**! Diese Repository enthält alles, was du benötigst, um Space Tactics mit Docker zu betreiben.
+- PHP 8.3
+- mySQL 8
+- mailhog
+- phpMyAdmin
 
+## Voraussetzungen
 
-## Getting Started
+- Docker installiert (mindestens Version 20.10)
+- Docker Compose installiert (mindestens Version 1.29)
 
-1. If not already done, [install Docker Compose](https://docs.docker.com/compose/install/) (v2.10+)
-2. Run `docker compose build --no-cache` to build fresh images
-3. Run `docker compose up --pull always -d --wait` to set up and start a fresh Symfony project
-4. Open `https://localhost` in your favorite web browser and [accept the auto-generated TLS certificate](https://stackoverflow.com/a/15076602/1352334)
-5. Run `docker compose down --remove-orphans` to stop the Docker containers.
+## Installation
 
-## Features
+1. **Repository klonen:**
+    ```sh
+    git clone https://github.com/ShaoKhan/Space-Tactics-Docker.git
+    cd Space-Tactics-Docker
+    ```
 
-* Production, development and CI ready
-* Just 1 service by default
-* Blazing-fast performance thanks to [the worker mode of FrankenPHP](https://github.com/dunglas/frankenphp/blob/main/docs/worker.md) (automatically enabled in prod mode)
-* [Installation of extra Docker Compose services](docs/extra-services.md) with Symfony Flex
-* Automatic HTTPS (in dev and prod)
-* HTTP/3 and [Early Hints](https://symfony.com/blog/new-in-symfony-6-3-early-hints) support
-* Real-time messaging thanks to a built-in [Mercure hub](https://symfony.com/doc/current/mercure.html)
-* [Vulcain](https://vulcain.rocks) support
-* Native [XDebug](docs/xdebug.md) integration
-* Super-readable configuration
+2. **Umgebungsvariablen setzen:**
+   Erstelle eine `.env` Datei und setze die erforderlichen Variablen. Ein Beispiel findest du in der Datei `.env.example`.
 
-**Enjoy!**
+3. **Container starten:**
+    ```sh
+    docker-compose up -d
+    ```
 
-## Docs
+## Verwendung
 
-1. [Options available](docs/options.md)
-2. [Using Symfony Docker with an existing project](docs/existing-project.md)
-3. [Support for extra services](docs/extra-services.md)
-4. [Deploying in production](docs/production.md)
-5. [Debugging with Xdebug](docs/xdebug.md)
-6. [TLS Certificates](docs/tls.md)
-7. [Using MySQL instead of PostgreSQL](docs/mysql.md)
-8. [Using Alpine Linux instead of Debian](docs/alpine.md)
-9. [Using a Makefile](docs/makefile.md)
-10. [Updating the template](docs/updating.md)
-11. [Troubleshooting](docs/troubleshooting.md)
+Nach dem Start der Container kannst du auf Space Tactics unter `http://localhost:PORT` zugreifen, wobei `PORT` der in der `docker-compose.yml` festgelegte Port ist.
 
-## License
+## Konfiguration
 
-Symfony Docker is available under the MIT License.
+### MySQL-Version
 
-## Credits
+Die MySQL-Version kann durch Setzen der Umgebungsvariable `MYSQL_VERSION` angepasst werden. Standardmäßig wird MySQL 8 verwendet.
 
-Created by [Kévin Dunglas](https://dunglas.dev), co-maintained by [Maxime Helias](https://twitter.com/maxhelias) and sponsored by [Les-Tilleuls.coop](https://les-tilleuls.coop).
-read the 'docs/'
-install with composer install
-change passwords in 'comnpose.yaml'
+Beispiel für `docker-compose.yml`:
+```yaml
+services:
+  db:
+    image: mysql:${MYSQL_VERSION:-8}
+    ...
