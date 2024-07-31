@@ -65,9 +65,19 @@
                             <div class="alert alert-danger" style="display: none"></div>
 
                             <div class="buildings">
+
                                 {% if buildings is not empty %}
                                     {% for name, buildingdata in buildings %}
                                         {% if buildingdata.isBuildable == true %}
+                                            {#ToDo --- isBuildable ist immer 1. Sollte aber nicht#}
+                                            {{ buildingdata.isBuildable }}
+                                            {% if buildingdata.level is defined %}
+                                                {% set nextlevel = buildingdata.level + 1 %}
+                                            {% else %}
+                                                {% set nextlevel = 1 %}
+                                            {% endif %}
+                                            {#ToDo --- isBuildable ist immer 1. Sollte aber nicht#}
+                                            {{ buildingdata.isBuildable }}
                                             {% if buildingdata.level is defined %}
                                                 {% set nextlevel = buildingdata.level + 1 %}
                                             {% else %}

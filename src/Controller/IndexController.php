@@ -14,6 +14,7 @@ use App\Service\MessagesService;
 use App\Service\PlanetService;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
+use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,11 +23,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 
 class IndexController extends CustomAbstractController
 {
@@ -58,10 +56,10 @@ class IndexController extends CustomAbstractController
     public function indexAction(
         $slug = NULL,
         ##[CurrentUser] UserInterface $user = NULL,
-    ): Response {
+    ): Response
+    {
 
-        if($this->isGranted('ROLE_USER'))
-        {
+        if($this->isGranted('ROLE_USER')) {
 
             $planets = $this->planetService->getPlanetsByPlayer($this->user, $slug);
             // Validate the slug using a regex pattern
@@ -163,7 +161,7 @@ class IndexController extends CustomAbstractController
             $userData->setPassword($hashedPassword);
             $userData->setRoles(['ROLE_USER']);
 
-            $this->userRepository->save($userData, true);
+            $this->userRepository->save($userData, TRUE);
 
             $planetData = $planetController->initialPlanetData($this->planetRepository, $this->uniRepository);
 

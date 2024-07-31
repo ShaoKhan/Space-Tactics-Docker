@@ -1,15 +1,5 @@
 <?php
-/*
- * space-tactics-php8
- * BuildingsController.php | 1/31/23, 9:34 PM
- * Copyright (C)  2023 ShaoKhan
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
+
 declare(strict_types = 1);
 
 namespace App\Controller;
@@ -20,6 +10,7 @@ use App\Repository\BuildingsQueueRepository;
 use App\Repository\BuildingsRepository;
 use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
+use App\Repository\PlanetScienceRepository;
 use App\Repository\UniRepository;
 use App\Service\BuildingCalculationService;
 use App\Service\BuildingDependencyChecker;
@@ -43,23 +34,24 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 class BuildingsController extends CustomAbstractController
 {
 
-    use Traits\MessagesTrait;
-    use Traits\PlanetsTrait;
+    #use Traits\MessagesTrait;
+    #use Traits\PlanetsTrait;
 
 
     public function __construct(
         protected readonly ManagerRegistry            $managerRegistry,
-        protected readonly PlanetRepository           $p,
-        protected readonly PlanetBuildingRepository   $pb,
-        protected readonly BuildingsRepository        $br,
-        protected readonly BuildingCalculationService $bcs,
+        protected readonly PlanetRepository           $planetRepository,
+        protected readonly PlanetBuildingRepository   $planetBuildingRepository,
+        protected readonly BuildingsRepository        $buildingsRepository,
+        protected readonly BuildingCalculationService $buildingCalculationService,
         protected readonly BuildingDependencyChecker  $buildingDependencyChecker,
-        protected readonly BuildingsQueueRepository   $bqr,
+        protected readonly BuildingsQueueRepository   $buildingsQueueRepository,
         protected readonly UniRepository              $uniRepository,
         protected readonly PlanetService              $planetService,
         protected readonly CheckMessagesService       $messagesService,
         LoggerInterface                               $logger,
         Security                                      $security,
+        private readonly PlanetScienceRepository      $planetScienceRepository,
     ) {
         parent::__construct($security, $logger);
     }
@@ -69,14 +61,7 @@ class BuildingsController extends CustomAbstractController
      */
     #[Route('/buildings/{slug?}', name: 'buildings')]
     public function index(
-        ManagerRegistry            $managerRegistry,
-        PlanetRepository           $p,
-        PlanetBuildingRepository   $pb,
-        BuildingsRepository        $br,
-        BuildingCalculationService $bcs,
-        Security                   $security,
-        BuildingsQueueRepository   $bqr,
-                                   $slug = NULL,
+        $slug = NULL,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
         if($slug === NULL) {
@@ -85,11 +70,11 @@ class BuildingsController extends CustomAbstractController
 
         $planets        = $this->planetService->getPlanetsByPlayer($this->user, $slug);
         $uni            = $this->uniRepository->findOneBy(['id' => 1]);
-        $planet         = $p->findOneBy(['user_uuid' => $this->user->getUuid(), 'slug' => $slug]);
+        $planet         = $this->planetRepository->findOneBy(['user_uuid' => $this->user->getUuid(), 'slug' => $slug]);
         $actualPlanetId = $planets[1]->getId();
-        $buildings      = $br->findAll(); //buildings repository
+        $buildings      = $this->buildingsRepository->findAll(); //buildings repository
         $buildingList   = [];
-        $buildingQueue  = $bqr->findBy(['planet' => $planet]);
+        $buildingQueue  = $this->buildingsQueueRepository->findBy(['planet' => $planet]);
         foreach($buildingQueue as $buildQueue) {
 
             $startDateTime           = new DateTime();
@@ -107,26 +92,29 @@ class BuildingsController extends CustomAbstractController
             }
         }
 
+        $currentBuildings = $this->planetBuildingRepository->findBy(['planet' => $actualPlanetId]);
+        $currentResearch  = $this->planetScienceRepository->findBy(['planet' => $actualPlanetId]);
+
         foreach($buildings as $building) {
-            $planetBuildings = $pb->findBy(['planet_id' => $actualPlanetId, 'building_id' => $building->getId()]);
-
-
+            $planetBuildings = $this->planetBuildingRepository->findBy(['planet' => $actualPlanetId, 'building' => $building->getId()]);
             if(!empty($building)) {
-                $building->setIsBuildable(
-                    $this->buildingDependencyChecker->canConstructBuilding($building->getId(), $actualPlanetId)
-                );
+                /*$building->setIsBuildable(
+                    $this->buildingDependencyChecker->canConstructBuilding($building->getId(), $actualPlanetId),
+                );*/
 
-                $building->__set('nextLevelProd', $bcs->calculateNextBuildingLevelProduction($building->getId(), $actualPlanetId, $managerRegistry) * 3600);
-                $building->__set('nextLevelBuildCost', $bcs->calculateNextBuildingCosts($building->getId(), $actualPlanetId, $managerRegistry));
-                $building->__set('nextLevelEnergyCost', $bcs->calculateNextBuildingLevelEnergyCosts($building->getId(), $actualPlanetId, $managerRegistry) * 3600);
+                $building->__set('nextLevelProd', $this->buildingCalculationService->calculateNextBuildingLevelProduction($building->getId(), $actualPlanetId) * 3600);
+                $building->__set('nextLevelBuildCost', $this->buildingCalculationService->calculateNextBuildingCosts($building->getId(), $actualPlanetId));
+                $building->__set('nextLevelEnergyCost', $this->buildingCalculationService->calculateNextBuildingLevelEnergyCosts($building->getId(), $actualPlanetId) * 3600);
                 $building->__set('obfuscated', base64_encode($building->getSlug() . getenv('OBFUSCATE_SECRET')));
                 if($planetBuildings) {
                     $building->__set('level', $planetBuildings[0]?->getBuildingLevel());
                 }
+                $building->__set('isBuildable', $this->buildingDependencyChecker->canBuildBuilding($building, $currentBuildings, $currentResearch));
+                #$arr[$building->getName()] = $this->buildingDependencyChecker->canBuildBuilding($building, $currentBuildings, $currentResearch);
             }
         }
 
-        $prodActual = $bcs->calculateActualBuildingProduction($planet->getMetalBuilding(), $planet->getCrystalBuilding(), $planet->getDeuteriumBuilding(), $managerRegistry);
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($planet->getMetalBuilding(), $planet->getCrystalBuilding(), $planet->getDeuteriumBuilding());
         return $this->render(
             'buildings/index.html.twig', [
             'planets'        => $planets[0],
@@ -143,25 +131,10 @@ class BuildingsController extends CustomAbstractController
         );
     }
 
-
-    /**
-     * @param Request                $request
-     * @param PlanetRepository       $p
-     * @param EntityManagerInterface $em
-     * @param null                   $slug
-     *
-     * @return JsonResponse
-     * @throws Exception
-     */
-
     #[NoReturn] #[Route('/saveResource/{slug?}', name: 'save-resource')]
     public function saveResource(
-        Request                $request,
-        PlanetRepository       $p,
-        EntityManagerInterface $em,
-                               $slug = NULL,
+        Request $request,
     ): JsonResponse {
-
 
         $data = json_decode($request->getContent(), TRUE);
 
@@ -170,13 +143,12 @@ class BuildingsController extends CustomAbstractController
         $slug    = end($referer);
 
         /** @var Planet $planet */
-        $planet = $p->findOneBy(['slug' => $slug]);
+        $planet = $this->planetRepository->findOneBy(['slug' => $slug]);
         $planet->setMetal(intval($data['amountMetal']));
         $planet->setCrystal(intval($data['amountCrystal']));
         $planet->setDeuterium(intval($data['amountDeuterium']));
-        $planet->setLastUpdate(new \DateTime());
-        $em->persist($planet);
-        $em->flush();
+        $planet->setLastUpdate(new DateTime());
+        $this->planetRepository->save($planet, TRUE);
 
         return new JsonResponse($data);
 

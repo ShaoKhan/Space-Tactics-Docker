@@ -3,8 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\PlanetBuildingRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PlanetBuildingRepository::class)]
@@ -15,13 +13,13 @@ class PlanetBuilding
     #[ORM\Column]
     private ?int $id = NULL;
 
-    #[ORM\ManyToOne(targetEntity: Planet::class)]
+    #[ORM\ManyToOne(targetEntity: Planet::class, inversedBy: 'planetBuildings')]
     #[ORM\JoinColumn(name: 'planet_id', referencedColumnName: 'id', nullable: FALSE)]
-    private ?Planet $planet_id;
+    private ?Planet $planet = NULL;
 
     #[ORM\ManyToOne(targetEntity: Buildings::class)]
     #[ORM\JoinColumn(name: 'building_id', referencedColumnName: 'id', nullable: FALSE)]
-    private ?Buildings $building_id;
+    private ?Buildings $building = NULL;
 
     #[ORM\Column]
     private ?int $building_level = NULL;
@@ -32,54 +30,31 @@ class PlanetBuilding
     #[ORM\Column(length: 255)]
     private ?string $building_slug = NULL;
 
-    public function __construct()
-    {
-        $this->building_id = new ArrayCollection();
-    }
-
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getPlanetId(): ?Planet
+    public function getPlanet(): ?Planet
     {
-        return $this->planet_id;
+        return $this->planet;
     }
 
-    public function setPlanetId(?Planet $planet_id): self
+    public function setPlanet(?Planet $planet): self
     {
-        $this->planet_id = $planet_id;
+        $this->planet = $planet;
 
         return $this;
     }
 
-    /**
-     * @return Collection<int, buildings>
-     */
-    public function getBuildingId(): Collection
+    public function getBuilding(): ?Buildings
     {
-        return $this->building_id;
+        return $this->building;
     }
 
-    public function addBuildingId(buildings $buildingId): self
+    public function setBuilding(?Buildings $building): self
     {
-        if(!$this->building_id->contains($buildingId)) {
-            $this->building_id->add($buildingId);
-            $buildingId->setPlanetBuilding($this);
-        }
-
-        return $this;
-    }
-
-    public function removeBuildingId(buildings $buildingId): self
-    {
-        if($this->building_id->removeElement($buildingId)) {
-            // set the owning side to null (unless already changed)
-            if($buildingId->getPlanetBuilding() === $this) {
-                $buildingId->setPlanetBuilding(NULL);
-            }
-        }
+        $this->building = $building;
 
         return $this;
     }
@@ -101,7 +76,7 @@ class PlanetBuilding
         return $this->planet_slug;
     }
 
-    public function setPlanetSlug(string $planet_slug): static
+    public function setPlanetSlug(string $planet_slug): self
     {
         $this->planet_slug = $planet_slug;
 
@@ -113,7 +88,7 @@ class PlanetBuilding
         return $this->building_slug;
     }
 
-    public function setBuildingSlug(string $building_slug): static
+    public function setBuildingSlug(string $building_slug): self
     {
         $this->building_slug = $building_slug;
 

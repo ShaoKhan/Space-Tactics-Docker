@@ -55,6 +55,39 @@ class BuildingDependencyChecker
 
     }
 
+    public function canBuildBuilding($building, $currentBuildings, $currentResearch): bool
+    {
+        dump($building);
+
+        $dependencies = $this->buildingDependencyRepository->findBy(['building' => $building]);
+
+        foreach ($dependencies as $dependency) {
+            $requiredBuilding = $dependency->getRequiredBuilding();
+            if ($requiredBuilding) {
+                if (isset($currentBuildings[$requiredBuilding->getId()])) {
+                    if ($currentBuildings[$requiredBuilding->getId()] < $dependency->getRequiredBuildingLevel()) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+
+            $requiredResearch = $dependency->getRequiredScience();
+            if ($requiredResearch) {
+                if (isset($currentResearch[$requiredResearch->getId()])) {
+                    if ($currentResearch[$requiredResearch->getId()] < $dependency->getRequiredScienceLevel()) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     private function findUserBuildingByPlanetIdAndBuildingId(
         int $buildingId,
         int $planetId,

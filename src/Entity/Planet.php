@@ -262,13 +262,13 @@ class Planet
     #[ORM\Column(nullable: TRUE)]
     private ?int $laserphalanx_building = null;
 
-    #[ORM\OneToMany(mappedBy: 'planet_id', targetEntity: PlanetBuilding::class)]
+    #[ORM\OneToMany(targetEntity: PlanetBuilding::class, mappedBy: 'planet', cascade: ['persist', 'remove'])]
     private Collection $planetBuildings;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $last_update = null;
 
-    #[ORM\OneToMany(mappedBy: 'planet', targetEntity: BuildingsQueue::class)]
+    #[ORM\OneToMany(targetEntity: BuildingsQueue::class, mappedBy: 'planet')]
     private Collection $building;
 
     public function __construct()
@@ -1154,8 +1154,8 @@ class Planet
     public function addPlanetBuilding(PlanetBuilding $planetBuilding): self
     {
         if (!$this->planetBuildings->contains($planetBuilding)) {
-            $this->planetBuildings->add($planetBuilding);
-            $planetBuilding->setPlanetId($this);
+            $this->planetBuildings[] = $planetBuilding;
+            $planetBuilding->setPlanet($this);
         }
 
         return $this;
@@ -1165,8 +1165,8 @@ class Planet
     {
         if ($this->planetBuildings->removeElement($planetBuilding)) {
             // set the owning side to null (unless already changed)
-            if ($planetBuilding->getPlanetId() === $this) {
-                $planetBuilding->setPlanetId(null);
+            if ($planetBuilding->getPlanet() === $this) {
+                $planetBuilding->setPlanet(null);
             }
         }
 

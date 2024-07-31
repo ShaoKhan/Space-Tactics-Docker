@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use AllowDynamicProperties;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController as SymfonyAbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -16,11 +15,10 @@ class CustomAbstractController extends SymfonyAbstractController
 
         protected readonly Security        $security,
         protected readonly LoggerInterface $logger,
-    )
-    {
-        if($security->getUser() !== null) {
-            $this->user      = $this->security->getUser() ?? null;
-            $this->user_uuid = $this->user?->getUuid() ?? null;
+    ) {
+        if($security->getUser() !== NULL) {
+            $this->user      = $this->security->getUser() ?? NULL;
+            $this->user_uuid = $this->user?->getUuid() ?? NULL;
         }
     }
 

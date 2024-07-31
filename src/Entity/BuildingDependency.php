@@ -24,7 +24,7 @@ class BuildingDependency
     private $requiredBuilding = null;
 
     #[ORM\Column(type: "integer", nullable: true)]
-    private $requiredBuildingLevel = null;
+    private ?int $requiredBuildingLevel = null;
 
     #[ORM\ManyToOne(targetEntity: Sciences::class)]
     #[ORM\JoinColumn(name: "required_science_id", referencedColumnName: "id", nullable: true)]

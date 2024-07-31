@@ -51,7 +51,7 @@ class Sciences
     /**
      * @var Collection<int, ScienceDependencies>
      */
-    #[ORM\OneToMany(targetEntity: ScienceDependencies::class, mappedBy: 'science_id')]
+    #[ORM\OneToMany(targetEntity: ScienceDependencies::class, mappedBy: 'science')]
     private Collection $scienceDependencies;
 
     public function __construct()
@@ -207,8 +207,8 @@ class Sciences
     public function addScienceDependency(ScienceDependencies $scienceDependency): static
     {
         if (!$this->scienceDependencies->contains($scienceDependency)) {
-            $this->scienceDependencies->add($scienceDependency);
-            $scienceDependency->setScienceId($this);
+            $this->scienceDependencies[] = ($scienceDependency);
+            $scienceDependency->setScience($this);
         }
 
         return $this;
@@ -218,8 +218,8 @@ class Sciences
     {
         if ($this->scienceDependencies->removeElement($scienceDependency)) {
             // set the owning side to null (unless already changed)
-            if ($scienceDependency->getScienceId() === $this) {
-                $scienceDependency->setScienceId(null);
+            if ($scienceDependency->getScience() === $this) {
+                $scienceDependency->setScience(null);
             }
         }
 

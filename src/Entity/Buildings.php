@@ -73,7 +73,7 @@ class Buildings
     /**
      * @var Collection<int, ScienceDependencies>
      */
-    #[ORM\OneToMany(targetEntity: ScienceDependencies::class, mappedBy: 'required_building_id')]
+    #[ORM\OneToMany(targetEntity: ScienceDependencies::class, mappedBy: 'requiredBuilding')]
     private Collection $scienceDependencies;
 
     public function __construct()
@@ -347,7 +347,7 @@ class Buildings
     {
         if (!$this->scienceDependencies->contains($scienceDependency)) {
             $this->scienceDependencies->add($scienceDependency);
-            $scienceDependency->setRequiredBuildingId($this);
+            $scienceDependency->setRequiredBuilding($this);
         }
 
         return $this;
@@ -357,8 +357,8 @@ class Buildings
     {
         if ($this->scienceDependencies->removeElement($scienceDependency)) {
             // set the owning side to null (unless already changed)
-            if ($scienceDependency->getRequiredBuildingId() === $this) {
-                $scienceDependency->setRequiredBuildingId(null);
+            if ($scienceDependency->getRequiredBuilding() === $this) {
+                $scienceDependency->setRequiredBuilding(null);
             }
         }
 

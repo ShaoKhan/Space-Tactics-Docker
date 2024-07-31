@@ -13,7 +13,7 @@ class ScienceDependencies
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Sciences::class)]
+    #[ORM\ManyToOne(targetEntity: Sciences::class, inversedBy: "scienceDependencies")]
     #[ORM\JoinColumn(name: "science_id", referencedColumnName: "id", nullable: false)]
     private $science;
 
@@ -24,7 +24,7 @@ class ScienceDependencies
     #[ORM\Column(type: "integer", nullable: true)]
     private ?int $requiredScienceLevel = null;
 
-    #[ORM\ManyToOne(targetEntity: Buildings::class)]
+    #[ORM\ManyToOne(targetEntity: Buildings::class, inversedBy: "scienceDependencies")]
     #[ORM\JoinColumn(name: "required_building_id", referencedColumnName: "id", nullable: true)]
     private $requiredBuilding = null;
 
@@ -44,33 +44,28 @@ class ScienceDependencies
     /**
      * @return mixed
      */
-    public function getScience()
+    public function getScience(): Sciences
     {
         return $this->science;
     }
 
-    /**
-     * @param mixed $science
-     */
-    public function setScience($science): void
+
+    public function setScience(?Sciences $science): self
     {
         $this->science = $science;
+        return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getRequiredScience(): null
+    public function getRequiredScience(): ?Sciences
     {
         return $this->requiredScience;
     }
 
-    /**
-     * @param mixed $requiredScience
-     */
-    public function setRequiredScience(null $requiredScience): void
+
+    public function setRequiredScience(?Sciences $requiredScience): self
     {
         $this->requiredScience = $requiredScience;
+        return $this;
     }
 
     /**
@@ -81,29 +76,32 @@ class ScienceDependencies
         return $this->requiredScienceLevel;
     }
 
-    public function setRequiredScienceLevel(?int $requiredScienceLevel): void
+    public function setRequiredScienceLevel(?int $requiredScienceLevel): self
     {
         $this->requiredScienceLevel = $requiredScienceLevel;
+        return $this;
     }
 
-    public function getRequiredBuilding(): null
+    public function getRequiredBuilding(): ?Buildings
     {
         return $this->requiredBuilding;
     }
 
-    public function setRequiredBuilding($requiredBuilding): void
+    public function setRequiredBuilding(?Buildings $requiredBuilding): self
     {
         $this->requiredBuilding = $requiredBuilding;
+        return $this;
     }
 
-    public function getRequiredBuildingLevel(): null
+    public function getRequiredBuildingLevel(): ?int
     {
         return $this->requiredBuildingLevel;
     }
 
-    public function setRequiredBuildingLevel($requiredBuildingLevel): void
+    public function setRequiredBuildingLevel(?int $requiredBuildingLevel): self
     {
         $this->requiredBuildingLevel = $requiredBuildingLevel;
+        return $this;
     }
 
 }
