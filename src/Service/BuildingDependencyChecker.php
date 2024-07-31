@@ -2,39 +2,41 @@
 
 namespace App\Service;
 
-use App\Entity\PlanetBuilding;
-use App\Entity\Sciences;
+use App\Entity\BuildingDependency;
+use App\Entity\Buildings;
+use App\Entity\Planet;
 use App\Repository\BuildingDependencyRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\PlanetBuildingRepository;
+use App\Repository\SciencesRepository;
 
-class BuildingDependencyChecker
+readonly class BuildingDependencyChecker
 {
-    private EntityManagerInterface $entityManager;
 
     public function __construct(
-        EntityManagerInterface                          $entityManager,
-        protected readonly BuildingDependencyRepository $buildingDependencyRepository,
+        protected BuildingDependencyRepository $buildingDependencyRepository,
+        protected PlanetBuildingRepository     $planetBuildingRepository,
+        protected SciencesRepository           $sciencesRepository,
 
-    ) {
-        $this->entityManager = $entityManager;
+    )
+    {
     }
 
-    public function canConstructBuilding(int $buildingId, int $planetId): bool
+    public function checkBuildable(Buildings $building, $planet): bool
     {
-        $dependencies = $this->buildingDependencyRepository->findBy(['building' => $buildingId]);
+        /** @var BuildingDependency $buildingDependencies */
+        $buildingDependencies = $this->buildingDependencyRepository->findBy(['building' => $building->getId()]);
 
-        if($dependencies !== []) {
-            foreach($dependencies as $dependency) {
-
-                $requiredBuildingId    = $dependency->getRequiredBuilding()?->getId();
+        if($buildingDependencies) {
+            foreach($buildingDependencies as $dependency) {
+                $requiredBuildingType  = $dependency->getRequiredBuilding();
                 $requiredBuildingLevel = $dependency->getRequiredBuildingLevel();
                 $requiredScienceId     = $dependency->getRequiredScience()?->getId();
                 $requiredScienceLevel  = $dependency->getRequiredScienceLevel();
                 $buildingDependencyMet = FALSE;
                 $scienceDependencyMet  = FALSE;
 
-                if($requiredBuildingId) {
-                    $requiredBuilding      = $this->findUserBuildingByPlanetIdAndBuildingId($requiredBuildingId, $planetId);
+                if($requiredBuildingType) {
+                    $requiredBuilding      = $this->findUserBuildingByPlanetIdAndBuildingId($requiredBuildingType, $planet);
                     $buildingDependencyMet = $requiredBuilding && $requiredBuilding->getBuildingLevel() >= $requiredBuildingLevel;
                 }
 
@@ -44,65 +46,27 @@ class BuildingDependencyChecker
                 }
 
                 if($buildingDependencyMet || $scienceDependencyMet) {
-                    return TRUE; // At least one dependency is met
-                }else{
-                    return FALSE; // No dependencies are met
-                }
-            }
-        }else{
-            return TRUE; // No dependencies
-        }
-
-    }
-
-    public function canBuildBuilding($building, $currentBuildings, $currentResearch): bool
-    {
-        dump($building);
-
-        $dependencies = $this->buildingDependencyRepository->findBy(['building' => $building]);
-
-        foreach ($dependencies as $dependency) {
-            $requiredBuilding = $dependency->getRequiredBuilding();
-            if ($requiredBuilding) {
-                if (isset($currentBuildings[$requiredBuilding->getId()])) {
-                    if ($currentBuildings[$requiredBuilding->getId()] < $dependency->getRequiredBuildingLevel()) {
-                        return false;
-                    }
+                    return TRUE;
                 } else {
-                    return false;
-                }
-            }
-
-            $requiredResearch = $dependency->getRequiredScience();
-            if ($requiredResearch) {
-                if (isset($currentResearch[$requiredResearch->getId()])) {
-                    if ($currentResearch[$requiredResearch->getId()] < $dependency->getRequiredScienceLevel()) {
-                        return false;
-                    }
-                } else {
-                    return false;
+                    return FALSE;
                 }
             }
         }
-
-        return true;
+        return TRUE;
     }
 
     private function findUserBuildingByPlanetIdAndBuildingId(
-        int $buildingId,
-        int $planetId,
+        Buildings $building,
+        Planet    $planet,
     ) {
-        $mr = $this->entityManager->getRepository(PlanetBuilding::class);
-        return $mr->findOneBy(['building_id' => $buildingId, 'planet_id' => $planetId]);
+        return $this->planetBuildingRepository->findOneBy(['building' => $building, 'planet' => $planet]);
     }
 
     private function findUserScienceLevelById(int $scienceId): int|null
     {
         if($scienceId === 1) {
-            $mr = $this->entityManager->getRepository(Sciences::class);
-            return $mr->findOneBy(['science' => $scienceId]);
+            return $this->sciencesRepository->findOneBy(['science' => $scienceId]);
         }
-
         return NULL;
     }
 }
