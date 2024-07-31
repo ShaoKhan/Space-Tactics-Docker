@@ -271,7 +271,7 @@ class Buildings
         return $this;
     }
 
-    public function isIsBuildable(): ?bool
+    public function isBuildable(): ?bool
     {
         return $this->isBuildable == 1;
     }

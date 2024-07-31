@@ -34,10 +34,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 class BuildingsController extends CustomAbstractController
 {
 
-    #use Traits\MessagesTrait;
-    #use Traits\PlanetsTrait;
-
-
     public function __construct(
         protected readonly ManagerRegistry            $managerRegistry,
         protected readonly PlanetRepository           $planetRepository,
@@ -49,9 +45,9 @@ class BuildingsController extends CustomAbstractController
         protected readonly UniRepository              $uniRepository,
         protected readonly PlanetService              $planetService,
         protected readonly CheckMessagesService       $messagesService,
+        private readonly PlanetScienceRepository      $planetScienceRepository,
         LoggerInterface                               $logger,
         Security                                      $security,
-        private readonly PlanetScienceRepository      $planetScienceRepository,
     ) {
         parent::__construct($security, $logger);
     }
@@ -75,6 +71,8 @@ class BuildingsController extends CustomAbstractController
         $buildings      = $this->buildingsRepository->findAll(); //buildings repository
         $buildingList   = [];
         $buildingQueue  = $this->buildingsQueueRepository->findBy(['planet' => $planet]);
+        $i              = 0;
+
         foreach($buildingQueue as $buildQueue) {
 
             $startDateTime           = new DateTime();
@@ -92,26 +90,22 @@ class BuildingsController extends CustomAbstractController
             }
         }
 
-        $currentBuildings = $this->planetBuildingRepository->findBy(['planet' => $actualPlanetId]);
-        $currentResearch  = $this->planetScienceRepository->findBy(['planet' => $actualPlanetId]);
 
+        //alle Gebäude die es gibt
         foreach($buildings as $building) {
-            $planetBuildings = $this->planetBuildingRepository->findBy(['planet' => $actualPlanetId, 'building' => $building->getId()]);
-            if(!empty($building)) {
-                /*$building->setIsBuildable(
-                    $this->buildingDependencyChecker->canConstructBuilding($building->getId(), $actualPlanetId),
-                );*/
 
-                $building->__set('nextLevelProd', $this->buildingCalculationService->calculateNextBuildingLevelProduction($building->getId(), $actualPlanetId) * 3600);
-                $building->__set('nextLevelBuildCost', $this->buildingCalculationService->calculateNextBuildingCosts($building->getId(), $actualPlanetId));
-                $building->__set('nextLevelEnergyCost', $this->buildingCalculationService->calculateNextBuildingLevelEnergyCosts($building->getId(), $actualPlanetId) * 3600);
-                $building->__set('obfuscated', base64_encode($building->getSlug() . getenv('OBFUSCATE_SECRET')));
-                if($planetBuildings) {
-                    $building->__set('level', $planetBuildings[0]?->getBuildingLevel());
-                }
-                $building->__set('isBuildable', $this->buildingDependencyChecker->canBuildBuilding($building, $currentBuildings, $currentResearch));
-                #$arr[$building->getName()] = $this->buildingDependencyChecker->canBuildBuilding($building, $currentBuildings, $currentResearch);
+            $planetBuildings = $this->planetBuildingRepository->findBy(['planet' => $actualPlanetId, 'building' => $building->getId()]);
+
+            $building->__set('nextLevelProd', $this->buildingCalculationService->calculateNextBuildingLevelProduction($building->getId(), $actualPlanetId) * 3600);
+            $building->__set('nextLevelBuildCost', $this->buildingCalculationService->calculateNextBuildingCosts($building->getId(), $actualPlanetId));
+            $building->__set('nextLevelEnergyCost', $this->buildingCalculationService->calculateNextBuildingLevelEnergyCosts($building->getId(), $actualPlanetId) * 3600);
+            $building->__set('obfuscated', base64_encode($building->getSlug() . getenv('OBFUSCATE_SECRET')));
+            if($planetBuildings) {
+                $building->__set('level', $planetBuildings[0]?->getBuildingLevel());
             }
+            $buildings[$i]->__set('isBuildable', $this->buildingDependencyChecker->checkBuildable($building, $planet));
+            $this->buildingsRepository->save($building);
+            $i++;
         }
 
         $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($planet->getMetalBuilding(), $planet->getCrystalBuilding(), $planet->getDeuteriumBuilding());

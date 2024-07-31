@@ -28,10 +28,10 @@ class BuildingDependency
 
     #[ORM\ManyToOne(targetEntity: Sciences::class)]
     #[ORM\JoinColumn(name: "required_science_id", referencedColumnName: "id", nullable: true)]
-    private $requiredScience = null;
+    private ?Sciences $requiredScience = null;
 
     #[ORM\Column(type: "integer", nullable: true)]
-    private $requiredScienceLevel = null;
+    private ?int $requiredScienceLevel = null;
 
     // Getters and setters for the above properties
 
@@ -45,34 +45,22 @@ class BuildingDependency
         $this->id = $id;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getBuilding()
+    public function getBuilding(): ?Buildings
     {
         return $this->building;
     }
 
-    /**
-     * @param mixed $building
-     */
-    public function setBuilding($building): void
+    public function setBuilding(?Buildings $building): void
     {
         $this->building = $building;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getRequiredBuilding()
+    public function getRequiredBuilding(): ?Buildings
     {
         return $this->requiredBuilding;
     }
 
-    /**
-     * @param mixed $requiredBuilding
-     */
-    public function setRequiredBuilding($requiredBuilding): void
+    public function setRequiredBuilding(?Buildings $requiredBuilding): void
     {
         $this->requiredBuilding = $requiredBuilding;
     }
@@ -85,15 +73,12 @@ class BuildingDependency
         return $this->requiredBuildingLevel;
     }
 
-    /**
-     * @param mixed $requiredBuildingLevel
-     */
     public function setRequiredBuildingLevel(?int $requiredBuildingLevel): void
     {
         $this->requiredBuildingLevel = $requiredBuildingLevel;
     }
 
-    public function getRequiredScience():null
+    public function getRequiredScience():?Sciences
     {
         return $this->requiredScience;
     }
