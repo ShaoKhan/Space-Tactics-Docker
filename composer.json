@@ -15,6 +15,7 @@
         "doctrine/orm": "^3.2",
         "monolog/monolog": "^3.7",
         "runtime/frankenphp-symfony": "^0.2.0",
+        "snc/redis-bundle": "^4.7",
         "symfony/asset": "7.1.*",
         "symfony/console": "7.1.*",
         "symfony/debug-bundle": "7.1.*",
