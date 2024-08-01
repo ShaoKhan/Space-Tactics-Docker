@@ -76,10 +76,17 @@ class Buildings
     #[ORM\OneToMany(targetEntity: ScienceDependencies::class, mappedBy: 'requiredBuilding')]
     private Collection $scienceDependencies;
 
+    /**
+     * @var Collection<int, ShipDependencies>
+     */
+    #[ORM\OneToMany(targetEntity: ShipDependencies::class, mappedBy: 'requiredBuilding')]
+    private Collection $shipDependencies;
+
     public function __construct()
     {
         $this->buildingsQueues = new ArrayCollection();
         $this->scienceDependencies = new ArrayCollection();
+        $this->shipDependencies = new ArrayCollection();
     }
 
     /**
@@ -359,6 +366,36 @@ class Buildings
             // set the owning side to null (unless already changed)
             if ($scienceDependency->getRequiredBuilding() === $this) {
                 $scienceDependency->setRequiredBuilding(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ShipDependencies>
+     */
+    public function getShipDependencies(): Collection
+    {
+        return $this->shipDependencies;
+    }
+
+    public function addShipDependency(ShipDependencies $shipDependency): static
+    {
+        if (!$this->shipDependencies->contains($shipDependency)) {
+            $this->shipDependencies->add($shipDependency);
+            $shipDependency->setRequiredBuilding($this);
+        }
+
+        return $this;
+    }
+
+    public function removeShipDependency(ShipDependencies $shipDependency): static
+    {
+        if ($this->shipDependencies->removeElement($shipDependency)) {
+            // set the owning side to null (unless already changed)
+            if ($shipDependency->getRequiredBuilding() === $this) {
+                $shipDependency->setRequiredBuilding(null);
             }
         }
 

@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\ShipsRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ShipsRepository::class)]
@@ -54,6 +56,17 @@ class Ships
 
     #[ORM\Column]
     private ?int $drive_science = null;
+
+    /**
+     * @var Collection<int, ShipDependencies>
+     */
+    #[ORM\OneToMany(targetEntity: ShipDependencies::class, mappedBy: 'ship')]
+    private Collection $shipDependencies;
+
+    public function __construct()
+    {
+        $this->shipDependencies = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -224,6 +237,36 @@ class Ships
     public function setDriveScience(int $drive_science): static
     {
         $this->drive_science = $drive_science;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ShipDependencies>
+     */
+    public function getShipDependencies(): Collection
+    {
+        return $this->shipDependencies;
+    }
+
+    public function addShipDependency(ShipDependencies $shipDependency): static
+    {
+        if (!$this->shipDependencies->contains($shipDependency)) {
+            $this->shipDependencies->add($shipDependency);
+            $shipDependency->setShip($this);
+        }
+
+        return $this;
+    }
+
+    public function removeShipDependency(ShipDependencies $shipDependency): static
+    {
+        if ($this->shipDependencies->removeElement($shipDependency)) {
+            // set the owning side to null (unless already changed)
+            if ($shipDependency->getShip() === $this) {
+                $shipDependency->setShip(null);
+            }
+        }
 
         return $this;
     }
