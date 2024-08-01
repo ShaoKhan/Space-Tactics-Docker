@@ -42,7 +42,7 @@ class ScienceController extends CustomAbstractController
         $this->denyAccessUnlessGranted('ROLE_USER');
 
         $planets  = $this->planetService->getPlanetsByPlayer($this->user, $slug);
-        $planet         = $this->planetRepository->findOneBy(['user_uuid' => $this->user->getUuid(), 'slug' => $slug]);
+        $planet = $this->planetRepository->findOneBy(['user_uuid' => $this->user->getUuid(), 'slug' => $slug]);
         $sciences = $this->sciencesRepository->findAll();
         $i        = 0;
 
@@ -50,13 +50,9 @@ class ScienceController extends CustomAbstractController
             $slug = $planets[1]->getSlug();
         }
 
-        $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($planet->getMetalBuilding(), $planet->getCrystalBuilding(), $planet->getDeuteriumBuilding());
 
         foreach($sciences as $science) {
-
-            $userScience = $this->userScienceRepository->findBy(['user_id' => $this->user]);
-
             $sciences[$i]->__set('isResearchable', $this->scienceDependencyChecker->checkResearchable($science, $planet));
             $this->sciencesRepository->save($science);
             $i++;
