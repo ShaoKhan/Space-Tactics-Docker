@@ -1,12 +1,16 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Controller;
 
 use App\Repository\PlanetRepository;
 use App\Repository\SciencesRepository;
+use App\Repository\UserScienceRepository;
 use App\Service\BuildingCalculationService;
 use App\Service\CheckMessagesService;
 use App\Service\PlanetService;
+use App\Service\ScienceDependencyChecker;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -23,8 +27,9 @@ class ScienceController extends CustomAbstractController
         private readonly ManagerRegistry            $managerRegistry,
         protected readonly CheckMessagesService     $checkMessagesService,
         protected readonly PlanetService            $planetService,
+        protected readonly UserScienceRepository    $userScienceRepository,
         Security                                    $security,
-        LoggerInterface                             $logger,
+        LoggerInterface                             $logger, private readonly ScienceDependencyChecker $scienceDependencyChecker,
 
     ) {
         parent::__construct($security, $logger);
@@ -34,9 +39,12 @@ class ScienceController extends CustomAbstractController
     public function index(
         $slug = NULL,
     ): Response {
-
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+
+        $planets  = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $planet         = $this->planetRepository->findOneBy(['user_uuid' => $this->user->getUuid(), 'slug' => $slug]);
+        $sciences = $this->sciencesRepository->findAll();
+        $i        = 0;
 
         if($slug === NULL) {
             $slug = $planets[1]->getSlug();
@@ -45,8 +53,14 @@ class ScienceController extends CustomAbstractController
         $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
         $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
 
-        //ToDo: get science by planet and the dependencies
-        $sc = $this->sciencesRepository->findAll();
+        foreach($sciences as $science) {
+
+            $userScience = $this->userScienceRepository->findBy(['user_id' => $this->user]);
+
+            $sciences[$i]->__set('isResearchable', $this->scienceDependencyChecker->checkResearchable($science, $planet));
+            $this->sciencesRepository->save($science);
+            $i++;
+        }
 
         return $this->render(
             'science/index.html.twig', [
@@ -57,7 +71,7 @@ class ScienceController extends CustomAbstractController
             'messages'       => $this->checkMessagesService->checkMessages(),
             'slug'           => $slug,
             'production'     => $prodActual,
-            'science'        => $sc,
+            'sciences'       => $sciences,
         ],
         );
     }
