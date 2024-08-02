@@ -63,6 +63,11 @@ class Ships
     #[ORM\OneToMany(targetEntity: ShipDependencies::class, mappedBy: 'ship')]
     private Collection $shipDependencies;
 
+    private array $properties = [];
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image = null;
+
     public function __construct()
     {
         $this->shipDependencies = new ArrayCollection();
@@ -267,6 +272,28 @@ class Ships
                 $shipDependency->setShip(null);
             }
         }
+
+        return $this;
+    }
+
+    public function __set($name, $value)
+    {
+        $this->properties[$name] = $value;
+    }
+
+    public function __get($name)
+    {
+        return $this->properties[$name] ?? null;
+    }
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): static
+    {
+        $this->image = $image;
 
         return $this;
     }

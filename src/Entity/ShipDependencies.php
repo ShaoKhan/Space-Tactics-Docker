@@ -13,7 +13,8 @@ class ShipDependencies
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'shipDependencies')]
+    #[ORM\ManyToOne(targetEntity: Ships::class, inversedBy: "shipDependencies")]
+    #[ORM\JoinColumn(name: "ship_id", referencedColumnName: "id", nullable: false)]
     private ?Ships $ship = null;
 
     #[ORM\ManyToOne(inversedBy: 'shipDependencies')]

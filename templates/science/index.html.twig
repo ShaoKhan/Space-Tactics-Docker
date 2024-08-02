@@ -29,9 +29,9 @@
                                             {% for planet in planets %}
 
                                                 <option
-                                                        value="{{ planet.slug }}"
-                                                        style="color: #000;"
-                                                        {{ planet.slug == slug ? 'selected' : '' }}
+                                                    value="{{ planet.slug }}"
+                                                    style="color: #000;"
+                                                    {{ planet.slug == slug ? 'selected' : '' }}
                                                 >
                                                     {{ planet.name }}
                                                     {{ planet.systemX }}:{{ planet.systemY }}:{{ planet.systemZ }}
@@ -45,33 +45,39 @@
                         <div class="container-fluid mt-3">
                             <div class="buildings">
 
-                                {% if  science is not empty %}
-                                    {% for sc in science %}
-                                        <div class="building">
-                                            <div class="building-headline">
-                                                <span>{{ sc.name|trans }}</span> |
-                                                <a href="#" title="{{ 'recycle'|trans }}">x</a>
-                                            </div>
-                                            <div class="building-content">
-                                                <div class="col-6 building-content-image">
-                                                    <img src="{{ sc.image|default(asset('img/science/dummy.jpg')) }}" alt="Science image"/>
+                                {% if  sciences is not empty %}
+                                    {% for sc in sciences %}
+                                        {% set isResearchable = sc.__get('isResearchable') %}
+                                        {% if isResearchable == 'true' %}
+
+                                            <div class="building">
+                                                <div class="building-headline">
+                                                    <span>{{ sc.name|trans }}</span> |
+                                                    <a href="#" title="{{ 'recycle'|trans }}">x</a>
                                                 </div>
-                                                <div class="col-6 building-content-specs">
-                                                    <div class="metal">{{ 'metal'|trans({},'resources') }}
-                                                        : {{ sc.costMetal }}</div>
-                                                    <div class="crystal">{{ 'crystal'|trans({},'resources') }}
-                                                        : {{ sc.costCrystal }}</div>
-                                                    <div class="deuterium">{{ 'deuterium'|trans({},'resources') }}
-                                                        : {{ sc.costDeuterium }}</div>
+                                                <div class="building-content">
+                                                    <div class="col-6 building-content-image">
+                                                        <img
+                                                            src="{{ sc.image|default(asset('build/science/dummy.jpg')) }}"
+                                                            alt="Science image"/>
+                                                    </div>
+                                                    <div class="col-6 building-content-specs">
+                                                        <div class="metal">{{ 'metal'|trans({},'resources') }}
+                                                            : {{ sc.costMetal }}</div>
+                                                        <div class="crystal">{{ 'crystal'|trans({},'resources') }}
+                                                            : {{ sc.costCrystal }}</div>
+                                                        <div class="deuterium">{{ 'deuterium'|trans({},'resources') }}
+                                                            : {{ sc.costDeuterium }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 building-button mt-1">
+                                                    <button type="button"
+                                                            class="btn btn-light">
+                                                        {{ 'upgrade_to'|trans }}
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div class="col-12 building-button mt-1">
-                                                <button type="button"
-                                                        class="btn btn-light">
-                                                    {{ 'upgrade_to'|trans }}
-                                                </button>
-                                            </div>
-                                        </div>
+                                        {% endif %}
                                     {% endfor %}
                                 {% endif %}
                             </div>

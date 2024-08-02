@@ -68,6 +68,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $alliance = null;
 
+    /**
+     * @var Collection<int, UserScience>
+     */
+    #[ORM\OneToMany(targetEntity: UserScience::class, mappedBy: 'user_id')]
+    private Collection $userSciences;
+
+    public function __construct()
+    {
+        $this->userSciences = new ArrayCollection();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -302,6 +313,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
         // TODO: Implement eraseCredentials() method.
+    }
+
+    /**
+     * @return Collection<int, UserScience>
+     */
+    public function getUserSciences(): Collection
+    {
+        return $this->userSciences;
+    }
+
+    public function addUserScience(UserScience $userScience): static
+    {
+        if (!$this->userSciences->contains($userScience)) {
+            $this->userSciences->add($userScience);
+            $userScience->setUserId($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUserScience(UserScience $userScience): static
+    {
+        if ($this->userSciences->removeElement($userScience)) {
+            // set the owning side to null (unless already changed)
+            if ($userScience->getUserId() === $this) {
+                $userScience->setUserId(null);
+            }
+        }
+
+        return $this;
     }
 
 }

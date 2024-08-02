@@ -21,6 +21,24 @@ class SciencesRepository extends ServiceEntityRepository
         parent::__construct($registry, Sciences::class);
     }
 
+    public function save(Sciences $entity, bool $flush = FALSE): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(Sciences $entity, bool $flush = FALSE): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
 //    /**
 //     * @return Sciences[] Returns an array of Sciences objects
 //     */

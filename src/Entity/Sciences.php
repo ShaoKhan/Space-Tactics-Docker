@@ -60,10 +60,20 @@ class Sciences
     #[ORM\OneToMany(targetEntity: ShipDependencies::class, mappedBy: 'requiredScience')]
     private Collection $shipDependencies;
 
+    /**
+     * @var Collection<int, UserScience>
+     */
+    #[ORM\OneToMany(targetEntity: UserScience::class, mappedBy: 'science')]
+    private Collection $userSciences;
+
+    private array $properties = [];
+
+
     public function __construct()
     {
         $this->scienceDependencies = new ArrayCollection();
         $this->shipDependencies = new ArrayCollection();
+        $this->userSciences = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -263,4 +273,43 @@ class Sciences
         return $this;
     }
 
+    /**
+     * @return Collection<int, UserScience>
+     */
+    public function getUserSciences(): Collection
+    {
+        return $this->userSciences;
+    }
+
+    public function addUserScience(UserScience $userScience): static
+    {
+        if (!$this->userSciences->contains($userScience)) {
+            $this->userSciences->add($userScience);
+            $userScience->setScience($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUserScience(UserScience $userScience): static
+    {
+        if ($this->userSciences->removeElement($userScience)) {
+            // set the owning side to null (unless already changed)
+            if ($userScience->getScience() === $this) {
+                $userScience->setScience(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function __set($name, $value)
+    {
+        $this->properties[$name] = $value;
+    }
+
+    public function __get($name)
+    {
+        return $this->properties[$name] ?? null;
+    }
 }
