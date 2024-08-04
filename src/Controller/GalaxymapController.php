@@ -13,14 +13,13 @@
 
 namespace App\Controller;
 
-use App\Entity\Planet;
+use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
 use App\Repository\UniRepository;
 use App\Repository\UserRepository;
 use App\Service\BuildingCalculationService;
 use App\Service\CheckMessagesService;
 use App\Service\PlanetService;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -39,6 +38,7 @@ class GalaxymapController extends CustomAbstractController
         protected readonly ManagerRegistry            $managerRegistry,
         protected readonly UniRepository              $uniRepository,
         protected readonly UserRepository             $userRepository,
+        protected readonly PlanetBuildingRepository   $planetBuildingRepository,
         LoggerInterface                               $logger,
         Security                                      $security,
     ) {
@@ -47,20 +47,19 @@ class GalaxymapController extends CustomAbstractController
 
     #[Route('/galaxymap/{slug?}', name: 'galaxymap')]
     public function index(
-        Request                    $request,
-        ManagerRegistry            $managerRegistry,
-        PlanetRepository           $p,
-        BuildingCalculationService $bcs,
-        UniRepository              $ur,
-        Security                   $security,
-                                   $slug = NULL,
+        Request $request,
+                $slug = NULL,
 
     ): Response {
 
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets    = $this->planetService->getPlanetsByPlayer($this->user, $slug);
-        $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
+        $planets        = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $actualPlanetId = $planets[1]->getId();
+        $prodActual     = $this->buildingCalculationService->calculateActualBuildingProduction(
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 1,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 2,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 3,],),
+        );
 
         $uniDimensions = $this->uniRepository->getUniDimensions()[0];
 
@@ -102,7 +101,7 @@ class GalaxymapController extends CustomAbstractController
 
     #[Route('/system-info', name: 'system-info')]
     public function ajaxGetSystemInfo(
-        Request                $request,
+        Request $request,
     ): JsonResponse {
 
         if(!$request->isXmlHttpRequest()) {

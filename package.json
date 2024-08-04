@@ -13,6 +13,8 @@
     "build": "encore production --progress"
   },
   "devDependencies": {
+    "@hotwired/stimulus": "^3.0.0",
+    "@symfony/ux-live-component": "file:vendor/symfony/ux-live-component/assets",
     "file-loader": "^6.0.0",
     "sharp": "^0.33.4",
     "webpack-notifier": "^1.15.0"

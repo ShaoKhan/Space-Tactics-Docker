@@ -61,14 +61,18 @@ class MainController extends CustomAbstractController
         $slug,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $planets        = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $actualPlanetId = $planets[1]->getId();
 
         if($slug === NULL) {
             $slug = $planets[1]->getSlug();
         }
 
-        $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction(
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 1,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 2,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 3,],),
+        );
         $now        = new \DateTime();
         $nowString  = $now->format('Y-m-d H:i:s');
 
@@ -119,19 +123,22 @@ class MainController extends CustomAbstractController
 
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets = $this->planetService->getPlanetsByPlayer($this->user, $slug);
-        $slug    = $slug ?? $planets[0]->getSlug();
+        $planets        = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $actualPlanetId = $planets[1]->getId();
+        $slug           = $slug ?? $planets[0]->getSlug();
+        $planet         = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
 
-        $planet             = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-        $metalBuilding      = $planet->getMetalBuilding();
-        $crystalBuilding    = $planet->getCrystalBuilding();
-        $deuteriumBuilding  = $planet->getDeuteriumBuilding();
-        $prodActual         = $this->buildingCalculationService->calculateActualBuildingProduction($metalBuilding, $crystalBuilding, $deuteriumBuilding, $this->managerRegistry);
+        $prodActual         = $this->buildingCalculationService->calculateActualBuildingProduction(
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 1,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 2,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 3,],),
+        );
         $planetForBuildings = $this->planetRepository->findBy(['user_uuid' => $this->user_uuid]);
         $buildings          = [];
 
         foreach($planetForBuildings as $pl) {
-            $buildings[$pl->getSlug()] = $this->planetBuildingRepository->getPlanetBuildingsByPlanetId($this->em, $pl->getId());
+            $buildings[$pl->getSlug()] = $this->planetBuildingRepository->findBy(['planet' => $pl]);
+            #$buildings[$pl->getSlug()] = $this->planetBuildingRepository->getPlanetBuildingsByPlanetId($this->em, $pl->getId());
         }
 
         return $this->render(

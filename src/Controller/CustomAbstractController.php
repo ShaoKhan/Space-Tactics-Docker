@@ -12,7 +12,6 @@ class CustomAbstractController extends SymfonyAbstractController
     protected readonly ?string $user_uuid;
 
     public function __construct(
-
         protected readonly Security        $security,
         protected readonly LoggerInterface $logger,
     ) {

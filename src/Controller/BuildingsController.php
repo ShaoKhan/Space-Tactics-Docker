@@ -45,7 +45,7 @@ class BuildingsController extends CustomAbstractController
         protected readonly UniRepository              $uniRepository,
         protected readonly PlanetService              $planetService,
         protected readonly CheckMessagesService       $messagesService,
-        private readonly PlanetScienceRepository      $planetScienceRepository,
+        protected readonly PlanetScienceRepository    $planetScienceRepository,
         LoggerInterface                               $logger,
         Security                                      $security,
     ) {
@@ -90,7 +90,6 @@ class BuildingsController extends CustomAbstractController
             }
         }
 
-
         //alle Gebäude die es gibt
         foreach($buildings as $building) {
 
@@ -108,7 +107,13 @@ class BuildingsController extends CustomAbstractController
             $i++;
         }
 
-        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($planet->getMetalBuilding(), $planet->getCrystalBuilding(), $planet->getDeuteriumBuilding());
+
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction(
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 1,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 2,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 3,],),
+        );
+
         return $this->render(
             'buildings/index.html.twig', [
             'planets'        => $planets[0],

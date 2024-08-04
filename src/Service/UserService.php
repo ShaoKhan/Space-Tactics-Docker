@@ -24,7 +24,7 @@ class UserService
         $buildingPoints = 0;
         $points = 0;
         foreach($userPlanets as $planet){
-            $planetBuildings = $this->planetBuildingRepository->findBy(['planet_id' => $planet->getId()]);
+            $planetBuildings = $this->planetBuildingRepository->findBy(['planet' => $planet]);
 
             foreach($planetBuildings as $building){
 
