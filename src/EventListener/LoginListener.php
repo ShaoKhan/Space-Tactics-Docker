@@ -3,6 +3,7 @@
 namespace App\EventListener;
 
 use App\Entity\User;
+use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
 use App\Repository\UserRepository;
 use App\Service\BuildingCalculationService;
@@ -26,10 +27,10 @@ class LoginListener implements AuthenticationSuccessHandlerInterface
         protected readonly ManagerRegistry            $managerRegistry,
         protected readonly BuildingCalculationService $buildingCalculationService,
         protected readonly UserRepository             $userRepository,
+        protected readonly PlanetBuildingRepository   $planetBuildingRepository,
         protected readonly PlanetRepository           $planetRepository,
         protected readonly PlanetService              $planetService,
-    )
-    {
+    ) {
     }
 
     /**
@@ -38,7 +39,8 @@ class LoginListener implements AuthenticationSuccessHandlerInterface
     public function onAuthenticationSuccess(
         Request        $request,
         TokenInterface $token,
-    ): ?Response {
+    ): ?Response
+    {
 
         /** @var User $user */
         $user = $token->getUser();
@@ -49,9 +51,10 @@ class LoginListener implements AuthenticationSuccessHandlerInterface
         $user->setLoginOn(new DateTime());
         $this->userRepository->save($user);
 
-        $lastLogout = $user->getLogoutOn() ?? new DateTime();
-        $planets    = $this->planetRepository->findBy(['user_uuid' => $user->getUuid()]);
-        $now        = new DateTime();
+        $lastLogout     = $user->getLogoutOn() ?? new DateTime();
+        $planets        = $this->planetRepository->findBy(['user_uuid' => $user->getUuid()]);
+        $actualPlanetId = $planets[1]->getId();
+        $now            = new DateTime();
 
         foreach($planets as $planet) {
             $interval = $lastLogout->diff($now);
@@ -59,10 +62,9 @@ class LoginListener implements AuthenticationSuccessHandlerInterface
 
             if($seconds > 0) {
                 $buildingProd = $this->buildingCalculationService->calculateActualBuildingProduction(
-                    $planet->getMetalBuilding(),
-                    $planet->getCrystalBuilding(),
-                    $planet->getDeuteriumBuilding(),
-                    $this->managerRegistry,
+                    $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 1,],),
+                    $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 2,],),
+                    $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 3,],),
                 );
 
                 $metal     = $buildingProd[0] * $seconds;
@@ -73,8 +75,9 @@ class LoginListener implements AuthenticationSuccessHandlerInterface
                 $planet->setCrystal($planet->getCrystal() + $crystal);
                 $planet->setDeuterium($planet->getDeuterium() + $deuterium);
             }
+            $this->planetRepository->save($planet);
         }
-        $this->entityManager->flush();
+        #$this->planetRepository->save($planet);
 
         #}
         return NULL;

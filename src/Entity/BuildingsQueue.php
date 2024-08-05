@@ -14,13 +14,18 @@ class BuildingsQueue
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'building')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Planet $planet = null;
+    ##[ORM\ManyToOne(inversedBy: 'building')]
+    ##[ORM\JoinColumn(nullable: false)]
+    #private ?Planet $planet = null;
+    #[ORM\Column(type: Types::STRING, length: 255)]
+    private ?string $planet = null;
 
-    #[ORM\ManyToOne(inversedBy: 'buildingsQueues')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Buildings $building = null;
+
+//    #[ORM\ManyToOne(inversedBy: 'buildingsQueues')]
+//    #[ORM\JoinColumn(nullable: false)]
+//    private ?Buildings $building = null;
+    #[ORM\Column(type: Types::STRING, length: 255)]
+    private ?string $building = null;
 
     #[ORM\Column(length: 255)]
     private ?string $user_slug = null;
@@ -36,24 +41,24 @@ class BuildingsQueue
         return $this->id;
     }
 
-    public function getPlanet(): ?Planet
+    public function getPlanet(): ?string
     {
         return $this->planet;
     }
 
-    public function setPlanet(?Planet $planet): static
+    public function setPlanet(?string $planet): self
     {
         $this->planet = $planet;
 
         return $this;
     }
 
-    public function getBuilding(): ?Buildings
+    public function getBuilding(): ?string
     {
         return $this->building;
     }
 
-    public function setBuilding(?Buildings $building): static
+    public function setBuilding(?string $building): self
     {
         $this->building = $building;
 
@@ -65,7 +70,7 @@ class BuildingsQueue
         return $this->user_slug;
     }
 
-    public function setUserSlug(string $user_slug): static
+    public function setUserSlug(string $user_slug): self
     {
         $this->user_slug = $user_slug;
 
@@ -77,7 +82,7 @@ class BuildingsQueue
         return $this->start_build;
     }
 
-    public function setStartBuild(\DateTimeInterface $start_build): static
+    public function setStartBuild(\DateTimeInterface $start_build): self
     {
         $this->start_build = $start_build;
 
@@ -89,7 +94,7 @@ class BuildingsQueue
         return $this->end_build;
     }
 
-    public function setEndBuild(\DateTimeInterface $end_build): static
+    public function setEndBuild(\DateTimeInterface $end_build): self
     {
         $this->end_build = $end_build;
 

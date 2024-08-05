@@ -123,11 +123,9 @@ class MainController extends CustomAbstractController
 
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $planets        = $this->planetService->getPlanetsByPlayer($this->user, $slug);
-        $actualPlanetId = $planets[1]->getId();
-        $slug           = $slug ?? $planets[0]->getSlug();
-        $planet         = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-
+        $planets            = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $actualPlanetId     = $planets[1]->getId();
+        $slug               = $slug ?? $planets[0]->getSlug();
         $prodActual         = $this->buildingCalculationService->calculateActualBuildingProduction(
             $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 1,],),
             $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 2,],),

@@ -223,6 +223,7 @@ class BuildingsController extends CustomAbstractController
             }
         }
 
+
         if($status !== FALSE) {
             //calculate new resources
             $newMetal     = $metalOnPlanet - $buildCosts["metal"];
@@ -236,14 +237,16 @@ class BuildingsController extends CustomAbstractController
             $end          = (clone $start)->add(new DateInterval('PT' . $secondsToAdd . 'S'));
 
             $buildingQueue = new BuildingsQueue();
-            $buildingQueue->setBuilding($buildingData);
-            $buildingQueue->setPlanet($planet);
+            $buildingQueue->setBuilding($buildingData->getSlug());
+            $buildingQueue->setPlanet($planet->getSlug());
             $buildingQueue->setStartBuild($start);
             $buildingQueue->setEndBuild($end);
             $buildingQueue->setUserSlug($planet->getUserUuid());
-            $em->persist($buildingQueue);
-            $em->persist($planet);
-            $em->flush();
+
+            //ToDo
+            //want save, 'cause 'building' is undefined ????
+            $this->buildingsQueueRepository->save($buildingQueue, TRUE);
+            $this->planetRepository->save($planet);
 
             $successMessages[] = 'Das folgende Gebäude wurde in die Warteschlange eingereiht: ';
 
