@@ -8,6 +8,7 @@ use App\Entity\AllianceMember;
 use App\Form\AllianceType;
 use App\Repository\AllianceMemberRepository;
 use App\Repository\AllianceRepository;
+use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
 use App\Repository\UniRepository;
 use App\Repository\UserRepository;
@@ -43,6 +44,7 @@ class AllianceController extends CustomAbstractController
         protected readonly UserPasswordHasherInterface $passwordHasher,
         protected readonly UserRepository              $userRepository,
         protected readonly UserService                 $userService,
+        protected readonly PlanetBuildingRepository    $planetBuildingRepository,
         Security                                       $security,
         LoggerInterface                                $logger,
 
@@ -60,13 +62,32 @@ class AllianceController extends CustomAbstractController
 
         $members          = [];
         $planets          = $this->planetService->getPlanetsByPlayer($this->user, $slug);
-        $res              = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-        $prodActual       = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
+        $actualPlanetId = $planets[1]->getId();
         $canFoundAlliance = FALSE;
         $uniData          = $this->uniRepository->findOneBy(['id' => $this->user->getUni()]);
         $alliance         = $this->allianceRepository->findOneBy(['slug' => $this->user->getAlliance()]) ?? NULL;
         $allianceRank     = $this->allianceMemberRepository->findOneBy(['user_slug' => $this->user->getUuid()]);
         $allianceUuid     = Uuid::v4();
+
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction(
+            $this->planetBuildingRepository->findOneBy(
+                [
+                    'planet' => $actualPlanetId, 'building' => 1,
+                ],
+            ),
+            $this->planetBuildingRepository->findOneBy(
+                [
+                    'planet' => $actualPlanetId, 'building' => 2,
+                ],
+            ),
+            $this->planetBuildingRepository->findOneBy(
+                [
+                    'planet' => $actualPlanetId, 'building' => 3,
+                ],
+            ),
+        );
+
+
 
         if($alliance !== NULL) {
             $allianceUuid = $alliance->getSlug();

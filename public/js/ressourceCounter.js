@@ -34,7 +34,7 @@ $(document).ready(function () {
     // ################################################
     $("a").each(function () {
 
-        /*$(this).on("click", function (e) {
+        $(this).on("click", function (e) {
 
             let slug = window.location.pathname.split('/')[2];
 
@@ -58,7 +58,7 @@ $(document).ready(function () {
                 }
             });
 
-        });*/
+        });
     });
 
 });

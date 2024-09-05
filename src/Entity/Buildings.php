@@ -65,9 +65,6 @@ class Buildings
     #[ORM\Column(length: 255)]
     private ?string $slug = null;
 
-    #[ORM\OneToMany(targetEntity: BuildingsQueue::class, mappedBy: 'building')]
-    private Collection $buildingsQueues;
-
     private array $properties = [];
 
     /**
@@ -84,7 +81,6 @@ class Buildings
 
     public function __construct()
     {
-        $this->buildingsQueues = new ArrayCollection();
         $this->scienceDependencies = new ArrayCollection();
         $this->shipDependencies = new ArrayCollection();
     }
@@ -302,36 +298,6 @@ class Buildings
         return $this;
     }
 
-    /**
-     * @return Collection<int, BuildingsQueue>
-     */
-    public function getBuildingsQueues(): Collection
-    {
-        return $this->buildingsQueues;
-    }
-
-    public function addBuildingsQueue(BuildingsQueue $buildingsQueue): static
-    {
-        if (!$this->buildingsQueues->contains($buildingsQueue)) {
-            $this->buildingsQueues->add($buildingsQueue);
-            $buildingsQueue->setBuilding($this);
-        }
-
-        return $this;
-    }
-
-    public function removeBuildingsQueue(BuildingsQueue $buildingsQueue): static
-    {
-        if ($this->buildingsQueues->removeElement($buildingsQueue)) {
-            // set the owning side to null (unless already changed)
-            if ($buildingsQueue->getBuilding() === $this) {
-                $buildingsQueue->setBuilding(null);
-            }
-        }
-
-        return $this;
-    }
-
     public function __set($name, $value)
     {
         $this->properties[$name] = $value;
@@ -400,6 +366,11 @@ class Buildings
         }
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name;
     }
 
 }

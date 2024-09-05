@@ -72,15 +72,13 @@ readonly class BuildingCalculationService
         $deuteriumLevel,
     ): array {
 
-        $metal     = $this->buildingsRepository->findOneBy(['id' => 1]);
-        $crystal   = $this->buildingsRepository->findOneBy(['id' => 2]);
-        $deuterium = $this->buildingsRepository->findOneBy(['id' => 3]);
+        $metal     = $this->buildingsRepository->findOneBy(['id' => $metalLevel->getBuildingLevel()]);
+        $crystal   = $this->buildingsRepository->findOneBy(['id' => $crystalLevel->getBuildingLevel()]);
+        $deuterium = $this->buildingsRepository->findOneBy(['id' => $deuteriumLevel->getBuildingLevel()]);
 
-        $metalPerHour     = (30 * $metalLevel * pow((1.1), $metalLevel)) * (0.1 * $metal->getFactor());
-        $crystalPerHour   = (20 * $crystalLevel * pow((1.1), $crystalLevel)) * (0.1 * $crystal->getFactor());
-        $deuteriumPerHour = (10 * $deuteriumLevel * pow((1.1), $deuteriumLevel)) * (0.1 * $deuterium->getFactor());
+        $metalPerHour     = (30 * $metalLevel->getBuildingLevel() * pow((1.1), $metalLevel->getBuildingLevel())) * (0.1 * $metal->getFactor());
+        $crystalPerHour   = (20 * $crystalLevel->getBuildingLevel() * pow((1.1), $crystalLevel->getBuildingLevel())) * (0.1 * $crystal->getFactor());
+        $deuteriumPerHour = (10 * $deuteriumLevel->getBuildingLevel() * pow((1.1), $deuteriumLevel->getBuildingLevel())) * (0.1 * $deuterium->getFactor());
         return [$metalPerHour, $crystalPerHour, $deuteriumPerHour];
     }
-
-
 }

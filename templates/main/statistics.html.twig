@@ -30,23 +30,23 @@
                                     {% if buildings is not null %}
                                         {% set planetcount = 12 / buildings|length %}
                                         {% for data in buildings %}
-                                            {% set planetdata = data.0[0].planetId %}
+                                            {% set planetdata = data|first %}
                                             <div class="col-{{ planetcount }} planetdata">
-
                                                 <div class="fw-bolder">
-                                                    <a href="{{ path('main', {'slug': planetdata.slug}) }}">{{ planetdata.name }}
-                                                        ({{ planetdata.systemX }}:{{ planetdata.systemY }}
-                                                        :{{ planetdata.systemZ }})</a>
+                                                    <a href="{{ path('main', {'slug': planetdata.getPlanet.slug}) }}">{{ planetdata.getPlanet.name }}
+                                                        ({{ planetdata.getPlanet.getSystemX }}:{{ planetdata.getPlanet.getSystemY }}
+                                                        :{{ planetdata.getPlanet.getSystemZ }})</a>
                                                 </div>
                                                 <div class="resourceText">
                                                     <div>{{ 'metal'|trans({}, 'resources') }}
-                                                        : {{ planetdata.metal|number_format(0,',','.') }}</div>
+                                                        : {{ planetdata.getPlanet.getMetal|number_format(0,',','.') }}</div>
                                                     <div>{{ 'crystal'|trans({}, 'resources') }}
-                                                        : {{ planetdata.crystal|number_format(0,',','.') }}</div>
+                                                        : {{ planetdata.getPlanet.getCrystal|number_format(0,',','.') }}</div>
                                                     <div>{{ 'deuterium'|trans({}, 'resources') }}
-                                                        : {{ planetdata.deuterium|number_format(0,',','.') }}</div>
+                                                        : {{ planetdata.getPlanet.getDeuterium|number_format(0,',','.') }}</div>
                                                 </div>
-
+{#                                                {{ dump(planetdata.getPlanet.getSlug) }}#}
+                                                {{ dump(data) }}
                                                 {% for building in data %}
                                                     {% if building.0.buildingLevel > 0 %}
                                                         <div class="buildingData">
@@ -58,6 +58,7 @@
                                                         </div>
                                                     {% endif %}
                                                 {% endfor %}
+
                                             </div>
                                         {% endfor %}
                                     {% endif %}

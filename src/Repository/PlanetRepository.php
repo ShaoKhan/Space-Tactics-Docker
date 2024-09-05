@@ -184,32 +184,25 @@ class PlanetRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-
     /**
-     * @deprecated
-     * is in AbstractController
+     * @throws \Exception
      */
-//    public function getPlanetDataByPlayerUuid($uuid)
-//    {
-//        $conn = $this->getEntityManager()->getConnection();
-//        $query = new \Doctrine\DBAL\Query\QueryBuilder($conn);
-//        $query->select('*')
-//            ->from('planet', 'p')
-//            ->innerJoin('p', 'planet_type', 'pt', 'p.type = pt.id')
-//            ->where('p.user_uuid = :uuid')
-//            ->setParameter('uuid', $uuid);
-//        $query->executeQuery();
-//        $execute = $query->execute();
-//        return $execute->fetchAll();
-//    }
+    public function update(Planet $entity, bool $flush = FALSE): void
+    {
+        // Stellen sicher, dass das Planet-Objekt bereits in der Datenbank existiert
+        $existingPlanet = $this->find($entity->getId());
 
-//    public function findOneBySomeField($value): ?Planet
-//    {
-//        return $this->createQueryBuilder('p')
-//            ->andWhere('p.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        if (!$existingPlanet) {
+            throw new \Exception('Planet not found');
+        }
+
+        // Aktualisiere die Felder des bestehenden Planeten mit den neuen Werten
+        $existingPlanet->setName($entity->getName());
+
+        $this->getEntityManager()->persist($existingPlanet);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
 }

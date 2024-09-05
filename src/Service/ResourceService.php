@@ -4,21 +4,19 @@ namespace App\Service;
 
 use Doctrine\Persistence\ManagerRegistry;
 
-class ResourceProductionSaver
+class ResourceService
 {
-    private $managerRegistry;
 
-    public function __construct(ManagerRegistry $managerRegistry)
+
+    public function __construct(
+
+    )
     {
-        $this->managerRegistry = $managerRegistry;
+
     }
 
     public function saveResourceProduction($data): array
     {
-
-
-
-
         return ['message' => 'Resource production saved successfully'];
     }
 }

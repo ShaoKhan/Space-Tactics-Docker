@@ -18,7 +18,6 @@ use App\Service\CheckMessagesService;
 use App\Service\PlanetService;
 use DateInterval;
 use DateTime;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Exception;
 use JetBrains\PhpStorm\NoReturn;
@@ -45,7 +44,7 @@ class BuildingsController extends CustomAbstractController
         protected readonly UniRepository              $uniRepository,
         protected readonly PlanetService              $planetService,
         protected readonly CheckMessagesService       $messagesService,
-        private readonly PlanetScienceRepository      $planetScienceRepository,
+        protected readonly PlanetScienceRepository    $planetScienceRepository,
         LoggerInterface                               $logger,
         Security                                      $security,
     ) {
@@ -70,26 +69,26 @@ class BuildingsController extends CustomAbstractController
         $actualPlanetId = $planets[1]->getId();
         $buildings      = $this->buildingsRepository->findAll(); //buildings repository
         $buildingList   = [];
-        $buildingQueue  = $this->buildingsQueueRepository->findBy(['planet' => $planet]);
+        $buildingQueue  = $this->buildingsQueueRepository->findBy(['planet_slug' => $planet->getSlug()]);
         $i              = 0;
 
-        foreach($buildingQueue as $buildQueue) {
+        foreach($buildingQueue as $count => $buildQueue) {
 
             $startDateTime           = new DateTime();
             $endDateTime             = new DateTime($buildQueue->getEndBuild()->format('Y-m-d H:i:s'));
             $timeDifferenceInSeconds = $endDateTime->getTimestamp() - $startDateTime->getTimestamp();
+            $bld                     = $this->buildingsRepository->findOneBy(['slug' => $buildQueue->getBuilding()]);
 
             if($timeDifferenceInSeconds >= 0) {
-                $buildingList[] = [
-                    'buildingId' => $buildQueue->getBuilding()->getSlug(),
-                    'name'       => $buildQueue->getBuilding()->getName(),
+                $buildingList[$count] = [
+                    'buildingId' => $buildQueue->getBuilding(),
+                    'name'       => $bld->getName(),
                     'start'      => $buildQueue->getStartBuild()->format('Y-m-d H:i:s'),
                     'end'        => $buildQueue->getEndBuild()->format('Y-m-d H:i:s'),
                     'timeLeft'   => $timeDifferenceInSeconds,
                 ];
             }
         }
-
 
         //alle Gebäude die es gibt
         foreach($buildings as $building) {
@@ -108,7 +107,13 @@ class BuildingsController extends CustomAbstractController
             $i++;
         }
 
-        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($planet->getMetalBuilding(), $planet->getCrystalBuilding(), $planet->getDeuteriumBuilding());
+
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction(
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 1,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 2,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 3,],),
+        );
+
         return $this->render(
             'buildings/index.html.twig', [
             'planets'        => $planets[0],
@@ -163,8 +168,6 @@ class BuildingsController extends CustomAbstractController
         BuildingCalculationService $bcs,
         ManagerRegistry            $managerRegistry,
         UniRepository              $uniRepository,
-        EntityManagerInterface     $em,
-
     ): Response {
 
         //check if resources are available [done]
@@ -174,21 +177,25 @@ class BuildingsController extends CustomAbstractController
         //start construction [done]
         //update planet resources
         //ToDo: create cronjob to remove from building queue and update energy resources
-        $successMessages = [];
-        $errorMessages   = [];
-        $user            = $security->getUser();
-        $planetId        = $request->request->get('planetId');
-        $buildingId      = $request->request->get('buildingId');
-        $status          = TRUE;
+        $successMessages    = [];
+        $errorMessages      = [];
+        $user               = $security->getUser();
+        $planetId           = $request->request->get('planetId');
+        $buildingId         = $request->request->get('buildingId');
+        $status             = TRUE;
+        $actualBuildingData = $planetBuildingRepository->findByPlanetAndBuilding(planetSlug: $planetId, buildingSlug: $buildingId);
 
-        $actualBuildingData = $planetBuildingRepository->findOneBy(['planet_slug' => $planetId, 'building_slug' => $buildingId]);
-        $buildingData       = $buildingsRepository->findOneBy(['slug' => $buildingId]);
-        $planet             = $planetRepository->findOneBy(['slug' => $planetId]);
-        $uni                = $uniRepository->findOneBy(['id' => $user->getUni()]);
+        $buildingData = $buildingsRepository->findOneBy(['slug' => $buildingId]);
+        $planet       = $planetRepository->findOneBy(['slug' => $planetId]);
+        $uni          = $uniRepository->findOneBy(['id' => $user->getUni()]);
 
         $metalOnPlanet     = $planet->getMetal();
         $crystalOnPlanet   = $planet->getCrystal();
         $deuteriumOnPlanet = $planet->getDeuterium();
+
+        if(!$buildingData) {
+            throw new Exception('Building to build not found');
+        }
 
         //build once ?
         if($buildingData->isOnePerPlanet() && $actualBuildingData->getBuildingLevel() >= 1) {
@@ -204,7 +211,7 @@ class BuildingsController extends CustomAbstractController
         }
 
         // building queue is full
-        $queue = $buildingsQueueRepository->findBy(['planet' => $planet]);
+        $queue = $buildingsQueueRepository->findBy(['planet_slug' => $planet->getSlug()]);
         if(count($queue) >= $uni->getMaxConstructionCount()) {
             $errorMessages[] = $translator->trans('building_queue', [], 'buildings');
             $status          = FALSE;
@@ -212,7 +219,7 @@ class BuildingsController extends CustomAbstractController
 
         //check if building is already in queue
         foreach($queue as $building) {
-            if($building->getBuilding()->getId() === $actualBuildingData->getId()) {
+            if($building->getBuilding() === $actualBuildingData->getBuilding()->getSlug()) {
                 $errorMessages[] = $translator->trans('already_in_queue', [], 'buildings');
                 $status          = FALSE;
             }
@@ -231,14 +238,27 @@ class BuildingsController extends CustomAbstractController
             $end          = (clone $start)->add(new DateInterval('PT' . $secondsToAdd . 'S'));
 
             $buildingQueue = new BuildingsQueue();
-            $buildingQueue->setBuilding($buildingData);
-            $buildingQueue->setPlanet($planet);
-            $buildingQueue->setStartBuild($start);
-            $buildingQueue->setEndBuild($end);
-            $buildingQueue->setUserSlug($planet->getUserUuid());
-            $em->persist($buildingQueue);
-            $em->persist($planet);
-            $em->flush();
+
+            $buildingQueue
+                ->setBuilding($buildingData->getSlug())
+                ->setPlanet($planet->getSlug())
+                ->setStartBuild($start)
+                ->setEndBuild($end)
+                ->setUserSlug($planet->getUserUuid());
+
+            try {
+                $this->buildingsQueueRepository->save($buildingQueue, TRUE);
+            }
+            catch(Exception $e) {
+                throw new Exception('Could not save building queue' . $e->getMessage());
+            }
+
+            try {
+                $this->planetRepository->update($planet, TRUE);
+            }
+            catch(Exception $e) {
+                throw new Exception('Could not update planet' . $e->getMessage());
+            }
 
             $successMessages[] = 'Das folgende Gebäude wurde in die Warteschlange eingereiht: ';
 
@@ -247,8 +267,8 @@ class BuildingsController extends CustomAbstractController
         return new JsonResponse(
             [
                 'successMessages' => $successMessages,
-                'errorMessages'   => $errorMessages,
-                'building'        => $translator->trans($buildingData->getName(), [], 'buildings'),
+                'errorMessages'   => $errorMessages ?? NULL,
+                'building'        => $translator->trans('metal_building', [], 'buildings'),
                 'end'             => $end ?? NULL,
             ],
         );

@@ -5,10 +5,14 @@ namespace App\Controller;
 use App\Entity\Messages;
 use App\Form\MessagesType;
 use App\Repository\MessagesRepository;
+use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
 use App\Service\BuildingCalculationService;
+use App\Service\CheckMessagesService;
+use App\Service\PlanetService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,26 +25,42 @@ class MessagesController extends CustomAbstractController
     use Traits\MessagesTrait;
     use Traits\PlanetsTrait;
 
+    public function __construct(
+        protected readonly PlanetRepository           $planetRepository,
+        protected readonly BuildingCalculationService $buildingCalculationService,
+        protected readonly MessagesRepository         $messagesRepository,
+        protected readonly CheckMessagesService       $messagesService,
+        protected readonly PlanetBuildingRepository   $planetBuildingRepository,
+        protected readonly PlanetService              $planetService,
+        Security                                       $security,
+        LoggerInterface                                $logger,
+    )
+    {
+        parent::__construct($security, $logger);
+    }
 
     #[Route('/messages/{slug?}', name: 'messages')]
     public function index(
-        Request                $request,
-        Security               $security,
-        ManagerRegistry        $managerRegistry,
+        Request                    $request,
+        Security                   $security,
+        ManagerRegistry            $managerRegistry,
         PlanetRepository           $p,
         BuildingCalculationService $bcs,
-        MessagesRepository     $messagesRepository,
-        EntityManagerInterface $em,
-                               $slug = NULL,
-    ): Response
-    {
+        MessagesRepository         $messagesRepository,
+        EntityManagerInterface     $em,
+                                   $slug = NULL,
+    ): Response {
 
         $user_uuid = $security->getUser()->getUuid();
         $this->denyAccessUnlessGranted('ROLE_USER');
 
-        $planets = $this->getPlanetsByPlayer($managerRegistry, $this->user_uuid, $slug);
-        $res = $p->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-        $prodActual = $bcs->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $managerRegistry);
+        $planets        = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $actualPlanetId = $planets[1]->getId();
+        $prodActual     = $this->buildingCalculationService->calculateActualBuildingProduction(
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 1,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 2,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 3,],),
+        );
 
         $form = $this->createForm(MessagesType::class, new Messages());
         $form->handleRequest($request);
@@ -74,7 +94,7 @@ class MessagesController extends CustomAbstractController
             'planets'        => $planets[0],
             'selectedPlanet' => $planets[1],
             'user'           => $this->getUser(),
-            'messages'       => $this->getMessages($security, $managerRegistry),
+            'messages'       => $this->messagesService->checkMessages(),
             'form'           => $form->createView(),
             'slug'           => $slug,
             'production'     => $prodActual,
@@ -87,8 +107,7 @@ class MessagesController extends CustomAbstractController
         $slug,
         MessagesRepository $messagesRepository,
         EntityManagerInterface $em,
-    ): Response
-    {
+    ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
         $message = $messagesRepository->findOneBy(['slug' => $slug]);
         $message->setDeleted(TRUE);

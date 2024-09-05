@@ -12,51 +12,47 @@ class BuildingsQueue
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
-
-    #[ORM\ManyToOne(inversedBy: 'building')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Planet $planet = null;
-
-    #[ORM\ManyToOne(inversedBy: 'buildingsQueues')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Buildings $building = null;
+    private ?int $id = NULL;
 
     #[ORM\Column(length: 255)]
-    private ?string $user_slug = null;
+    private ?string $planet_slug;
+
+    #[ORM\Column(length: 255)]
+    private ?string $building_slug;
+
+    #[ORM\Column(length: 255)]
+    private ?string $user_slug = NULL;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    private ?\DateTimeInterface $start_build = null;
+    private ?\DateTimeInterface $start_build = NULL;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    private ?\DateTimeInterface $end_build = null;
+    private ?\DateTimeInterface $end_build = NULL;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getPlanet(): ?Planet
+    public function getPlanet(): ?string
     {
-        return $this->planet;
+        return $this->planet_slug;
     }
 
-    public function setPlanet(?Planet $planet): static
+    public function setPlanet(?string $planet_slug): self
     {
-        $this->planet = $planet;
-
+        $this->planet_slug = $planet_slug;
         return $this;
     }
 
-    public function getBuilding(): ?Buildings
+    public function getBuilding(): ?string
     {
-        return $this->building;
+        return $this->building_slug;
     }
 
-    public function setBuilding(?Buildings $building): static
+    public function setBuilding(?string $building_slug): self
     {
-        $this->building = $building;
-
+        $this->building_slug = $building_slug;
         return $this;
     }
 
@@ -65,7 +61,7 @@ class BuildingsQueue
         return $this->user_slug;
     }
 
-    public function setUserSlug(string $user_slug): static
+    public function setUserSlug(string $user_slug): self
     {
         $this->user_slug = $user_slug;
 
@@ -77,7 +73,7 @@ class BuildingsQueue
         return $this->start_build;
     }
 
-    public function setStartBuild(\DateTimeInterface $start_build): static
+    public function setStartBuild(\DateTimeInterface $start_build): self
     {
         $this->start_build = $start_build;
 
@@ -89,7 +85,7 @@ class BuildingsQueue
         return $this->end_build;
     }
 
-    public function setEndBuild(\DateTimeInterface $end_build): static
+    public function setEndBuild(\DateTimeInterface $end_build): self
     {
         $this->end_build = $end_build;
 

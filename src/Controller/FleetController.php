@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
 use App\Service\BuildingCalculationService;
 use App\Service\CheckMessagesService;
@@ -20,6 +21,7 @@ class FleetController extends CustomAbstractController
         protected readonly CheckMessagesService       $checkMessagesService,
         protected readonly PlanetService              $planetService,
         protected readonly ManagerRegistry            $managerRegistry,
+        protected readonly PlanetBuildingRepository   $planetBuildingRepository,
         LoggerInterface                               $logger,
         Security                                      $security,
     ) {
@@ -32,8 +34,13 @@ class FleetController extends CustomAbstractController
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
         $planets    = $this->planetService->getPlanetsByPlayer($this->user, $slug);
-        $res        = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($res->getMetalBuilding(), $res->getCrystalBuilding(), $res->getDeuteriumBuilding(), $this->managerRegistry);
+        $actualPlanetId = $planets[1]->getId();
+
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction(
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 1,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 2,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 3,],),
+        );
 
         return $this->render(
             'fleet/index.html.twig', [

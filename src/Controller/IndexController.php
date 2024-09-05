@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Planet;
 use App\Entity\User;
 use App\Form\Type\UserType;
+use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
 use App\Repository\UniRepository;
 use App\Repository\UserRepository;
@@ -14,7 +15,6 @@ use App\Service\MessagesService;
 use App\Service\PlanetService;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
-use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,6 +25,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 
 class IndexController extends CustomAbstractController
 {
@@ -42,6 +43,7 @@ class IndexController extends CustomAbstractController
         protected readonly UserPasswordHasherInterface $passwordHasher,
         protected readonly UniRepository               $uniRepository,
         protected readonly TranslatorInterface         $translator,
+        protected readonly PlanetBuildingRepository    $planetBuildingRepository,
         protected readonly UserRepository              $userRepository,
         private readonly RequestStack                  $requestStack,
         Security                                       $security,
@@ -62,21 +64,19 @@ class IndexController extends CustomAbstractController
         if($this->isGranted('ROLE_USER')) {
 
             $planets = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+            $actualPlanetId = $planets[1]->getId();
+
             // Validate the slug using a regex pattern
             $validSlugPattern = '/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}[a-f0-9]$/';
             if($slug === NULL || !preg_match($validSlugPattern, $slug)) {
                 $slug = $planets[1]->getSlug();
             }
 
-            // Retrieve planet data
-            $planet = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
-
             // Calculate production
-            $production = $this->buildingCalculationService->calculateActualBuildingProduction(
-                $planet->getMetalBuilding(),
-                $planet->getCrystalBuilding(),
-                $planet->getDeuteriumBuilding(),
-                $this->managerRegistry,
+            $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction(
+                $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 1,],),
+                $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 2,],),
+                $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 3,],),
             );
 
             // Render the template for authenticated users
@@ -89,7 +89,7 @@ class IndexController extends CustomAbstractController
                     'user'           => $this->user,
                     'messages'       => $this->getMessages($this->security, $this->managerRegistry),
                     'slug'           => $slug,
-                    'production'     => $production,
+                    'production'     => $prodActual,
                 ],
             );
         }

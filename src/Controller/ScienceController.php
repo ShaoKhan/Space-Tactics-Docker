@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace App\Controller;
 
+use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
 use App\Repository\SciencesRepository;
 use App\Repository\UserScienceRepository;
@@ -24,12 +25,13 @@ class ScienceController extends CustomAbstractController
         private readonly BuildingCalculationService $buildingCalculationService,
         private readonly PlanetRepository           $planetRepository,
         private readonly SciencesRepository         $sciencesRepository,
-        private readonly ManagerRegistry            $managerRegistry,
+        private readonly PlanetBuildingRepository   $planetBuildingRepository,
         protected readonly CheckMessagesService     $checkMessagesService,
         protected readonly PlanetService            $planetService,
+        protected readonly ScienceDependencyChecker $scienceDependencyChecker,
         protected readonly UserScienceRepository    $userScienceRepository,
         Security                                    $security,
-        LoggerInterface                             $logger, private readonly ScienceDependencyChecker $scienceDependencyChecker,
+        LoggerInterface                             $logger,
 
     ) {
         parent::__construct($security, $logger);
@@ -41,8 +43,10 @@ class ScienceController extends CustomAbstractController
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
 
-        $planets  = $this->planetService->getPlanetsByPlayer($this->user, $slug);
-        $planet = $this->planetRepository->findOneBy(['user_uuid' => $this->user->getUuid(), 'slug' => $slug]);
+        $planets        = $this->planetService->getPlanetsByPlayer($this->user, $slug);
+        $planet         = $this->planetRepository->findOneBy(['user_uuid' => $this->user->getUuid(), 'slug' => $slug]);
+        $actualPlanetId = $planets[1]->getId();
+
         $sciences = $this->sciencesRepository->findAll();
         $i        = 0;
 
@@ -50,7 +54,23 @@ class ScienceController extends CustomAbstractController
             $slug = $planets[1]->getSlug();
         }
 
-        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($planet->getMetalBuilding(), $planet->getCrystalBuilding(), $planet->getDeuteriumBuilding());
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction(
+            $this->planetBuildingRepository->findOneBy(
+                [
+                    'planet' => $actualPlanetId, 'building' => 1,
+                ],
+            ),
+            $this->planetBuildingRepository->findOneBy(
+                [
+                    'planet' => $actualPlanetId, 'building' => 2,
+                ],
+            ),
+            $this->planetBuildingRepository->findOneBy(
+                [
+                    'planet' => $actualPlanetId, 'building' => 3,
+                ],
+            ),
+        );
 
         foreach($sciences as $science) {
             $sciences[$i]->__set('isResearchable', $this->scienceDependencyChecker->checkResearchable($science, $planet));

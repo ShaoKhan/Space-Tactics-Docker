@@ -10,10 +10,10 @@ use Doctrine\Persistence\ManagerRegistry;
 /**
  * @extends ServiceEntityRepository<PlanetBuilding>
  *
- * @method PlanetBuilding|null find($id, $lockMode = null, $lockVersion = null)
- * @method PlanetBuilding|null findOneBy(array $criteria, array $orderBy = null)
+ * @method PlanetBuilding|null find($id, $lockMode = NULL, $lockVersion = NULL)
+ * @method PlanetBuilding|null findOneBy(array $criteria, array $orderBy = NULL)
  * @method PlanetBuilding[]    findAll()
- * @method PlanetBuilding[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method PlanetBuilding[]    findBy(array $criteria, array $orderBy = NULL, $limit = NULL, $offset = NULL)
  */
 class PlanetBuildingRepository extends ServiceEntityRepository
 {
@@ -22,7 +22,7 @@ class PlanetBuildingRepository extends ServiceEntityRepository
         parent::__construct($registry, PlanetBuilding::class);
     }
 
-    public function save(PlanetBuilding $entity, bool $flush = false): void
+    public function save(PlanetBuilding $entity, bool $flush = FALSE): void
     {
         $this->getEntityManager()->persist($entity);
 
@@ -31,7 +31,7 @@ class PlanetBuildingRepository extends ServiceEntityRepository
         }
     }
 
-    public function remove(PlanetBuilding $entity, bool $flush = false): void
+    public function remove(PlanetBuilding $entity, bool $flush = FALSE): void
     {
         $this->getEntityManager()->remove($entity);
 
@@ -42,15 +42,15 @@ class PlanetBuildingRepository extends ServiceEntityRepository
 
     public function getPlanetBuildingsByPlanetId(
         EntityManagerInterface $entityManager,
-        int $planetId, $startFromLevel = 0
-    )
-    {
+        int                    $planetId,
+        $startFromLevel = 0,
+    ) {
         $query = $entityManager->createQuery(
             '
     SELECT pb, b.name AS buildingName
     FROM App\Entity\PlanetBuilding pb
     JOIN pb.building_id b
-    WHERE pb.planet_id = :planetId 
+    WHERE pb.planet_id = :planetId
     AND pb.building_level >= :byLevel
 ',
         );
@@ -61,6 +61,22 @@ class PlanetBuildingRepository extends ServiceEntityRepository
         return $query->getResult();
     }
 
+
+    public function findByPlanetAndBuilding($planetSlug, $buildingSlug)
+    {
+        $qb = $this->createQueryBuilder('pb')
+                   ->innerJoin('pb.planet', 'p') // Verbindung zur Planeten-Tabelle
+                   ->innerJoin('pb.building', 'b') // Verbindung zur Gebäude-Tabelle
+                   ->addSelect('p') // Stelle sicher, dass alle Planetenfelder geladen werden
+                   ->addSelect('b') // Stelle sicher, dass alle Gebäudefelder geladen werden
+                   ->where('p.slug = :planetSlug')
+                   ->andWhere('b.slug = :buildingSlug')
+                   ->setParameter('planetSlug', $planetSlug)
+                   ->setParameter('buildingSlug', $buildingSlug)
+                   ->getQuery();
+
+        return $qb->getOneOrNullResult();
+    }
     //    /**
     //     * @return PlanetBuilding[] Returns an array of PlanetBuilding objects
     //     */

@@ -21,6 +21,24 @@ class BuildingsQueueRepository extends ServiceEntityRepository
         parent::__construct($registry, BuildingsQueue::class);
     }
 
+    public function save(BuildingsQueue $entity, bool $flush = FALSE): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(BuildingsQueue $entity, bool $flush = FALSE): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
 //    /**
 //     * @return BuildingsQueue[] Returns an array of BuildingsQueue objects
 //     */

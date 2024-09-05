@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
 use App\Repository\ShipsRepository;
 use App\Repository\UserScienceRepository;
@@ -27,6 +28,7 @@ class ShipyardController extends CustomAbstractController
         protected readonly ShipsRepository            $shipsRepository,
         protected readonly ShipDependencyChecker      $shipDependencyChecker,
         protected readonly UserScienceRepository      $userScienceRepository,
+        protected readonly PlanetBuildingRepository   $planetBuildingRepository,
         LoggerInterface                               $logger,
         Security                                      $security,
     ) {
@@ -41,9 +43,16 @@ class ShipyardController extends CustomAbstractController
         $this->denyAccessUnlessGranted('ROLE_USER');
         $planets    = $this->planetService->getPlanetsByPlayer($this->user, $slug);
         $planet     = $this->planetRepository->findOneBy(['user_uuid' => $this->user_uuid, 'slug' => $slug]);
+        $actualPlanetId = $planets[1]->getId();
+
         $ships      = $this->shipsRepository->findAll();
-        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction($planet->getMetalBuilding(), $planet->getCrystalBuilding(), $planet->getDeuteriumBuilding());
         $i          = 0;
+
+        $prodActual = $this->buildingCalculationService->calculateActualBuildingProduction(
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 1,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 2,],),
+            $this->planetBuildingRepository->findOneBy(['planet' => $actualPlanetId, 'building' => 3,],),
+        );
 
         foreach($ships as $ship) {
             $ships[$i]->__set('isResearchable', $this->shipDependencyChecker->checkResearchable($ship, $planet));
