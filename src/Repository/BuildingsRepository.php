@@ -95,7 +95,6 @@ class BuildingsRepository extends ServiceEntityRepository
 
 
     }
-
 //    /**
 //     * @return Buildings[] Returns an array of Buildings objects
 //     */

@@ -61,6 +61,22 @@ class PlanetBuildingRepository extends ServiceEntityRepository
         return $query->getResult();
     }
 
+
+    public function findByPlanetAndBuilding($planetSlug, $buildingSlug)
+    {
+        $qb = $this->createQueryBuilder('pb')
+                   ->innerJoin('pb.planet', 'p') // Verbindung zur Planeten-Tabelle
+                   ->innerJoin('pb.building', 'b') // Verbindung zur Gebäude-Tabelle
+                   ->addSelect('p') // Stelle sicher, dass alle Planetenfelder geladen werden
+                   ->addSelect('b') // Stelle sicher, dass alle Gebäudefelder geladen werden
+                   ->where('p.slug = :planetSlug')
+                   ->andWhere('b.slug = :buildingSlug')
+                   ->setParameter('planetSlug', $planetSlug)
+                   ->setParameter('buildingSlug', $buildingSlug)
+                   ->getQuery();
+
+        return $qb->getOneOrNullResult();
+    }
     //    /**
     //     * @return PlanetBuilding[] Returns an array of PlanetBuilding objects
     //     */

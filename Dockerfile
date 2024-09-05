@@ -58,6 +58,7 @@ FROM frankenphp_base AS frankenphp_dev
 ENV APP_ENV=dev XDEBUG_MODE=off
 
 RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+RUN echo "max_execution_time=600" >> "$PHP_INI_DIR/php.ini"
 
 RUN set -eux; \
 	install-php-extensions \
