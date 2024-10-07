@@ -1,0 +1,66 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Space-Tactics Main{% endblock %}
+
+{% block body %}
+    <!-- Main Menu -->
+
+    {% include 'parts/ingame_mainmenu.html.twig' %}
+
+    <!-- Content -->
+    <section id="content" class="main">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-2 col-md-12">
+                    {% if app.user is not null %}
+                        {% include 'parts/sidebar.html.twig' %}
+                    {% endif %}
+                </div>
+
+                <div class="col-lg-10 col-md-12">
+                    <section>
+                        <div class="row">
+                            <div class="col-lg-7 col-md-12">
+                                <h3>Deine Accountdaten, {{ user.username }} </h3>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-7 col-md-12">
+                                <p>
+                                    Du bist bei uns registriert seit: <strong>{{ user.registerOn|date('d.m.Y, H:i:m')~ ' Uhr' }}</strong><br />
+                                    Deine letzte Anmeldung war am: <strong>{{ user.lastActive|date('d.m.Y, H:i:m')~' Uhr'|default('noch nie') }}</strong><br />
+                                    Du bist in der Allianz: <strong>{{ alliance.name|default('keiner') }}</strong>
+                                </p>
+                            </div>
+
+
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="alert alert-danger" id="errormessage"></div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-lg-5 col-md-12">
+                                    <div class="form-check form-switch d-flex align-items-center">
+                                        <input class="form-check-input me-3" type="checkbox" role="switch"
+                                               id="flexSwitchCheckDefault" data-vac="{{ user.vacation }}">
+                                        <label class="form-check-label" id="vacationLabel" for="flexSwitchCheckDefault">Urlaubsmodus
+                                            off</label>
+                                    </div>
+                                </div>
+                            </div>
+                    </section>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    {% include 'parts/footer.html.twig' %}
+{% endblock %}
+
+
+
+

@@ -20,3 +20,4 @@ import './support.js';
 import './messages.js';
 import './startConstruction.js';
 import './queues.js';
+import './user-account.js';

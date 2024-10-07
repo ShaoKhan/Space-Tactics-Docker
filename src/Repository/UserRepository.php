@@ -67,6 +67,17 @@ class UserRepository extends ServiceEntityRepository
         }
     }
 
+
+    public function updateVacationStatus(string $uuid, bool $status): void
+    {
+        $user = $this->findOneBy(['uuid' => $uuid]);
+
+        if ($user) {
+            $user->setVacation($status);
+            $this->getEntityManager()->flush();
+        }
+    }
+
 //    /**
 //     * @return User[] Returns an array of User objects
 //     */

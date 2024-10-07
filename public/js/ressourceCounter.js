@@ -32,7 +32,7 @@ $(document).ready(function () {
     // ################################################
     // save resources on every click on a-tag or button
     // ################################################
-    $("a").each(function () {
+    /*$("a").each(function () {
 
         $(this).on("click", function (e) {
 
@@ -59,7 +59,7 @@ $(document).ready(function () {
             });
 
         });
-    });
+    });*/
 
 });
 

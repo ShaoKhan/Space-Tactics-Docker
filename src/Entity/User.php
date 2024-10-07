@@ -74,6 +74,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: UserScience::class, mappedBy: 'user_id')]
     private Collection $userSciences;
 
+    #[ORM\Column(type: Types::SMALLINT, nullable: true)]
+    private ?int $vacation = null;
+
     public function __construct()
     {
         $this->userSciences = new ArrayCollection();
@@ -341,6 +344,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $userScience->setUserId(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getVacation(): ?int
+    {
+        return $this->vacation;
+    }
+
+    public function setVacation(?int $vacation): static
+    {
+        $this->vacation = $vacation;
 
         return $this;
     }
