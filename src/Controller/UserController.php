@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Form\Type\UserType;
 use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
 use App\Repository\UserRepository;
@@ -16,6 +17,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 class UserController extends CustomAbstractController
@@ -36,7 +38,10 @@ class UserController extends CustomAbstractController
     }
 
     #[Route('account-settings', name: 'account_settings')]
-    public function accountSettingsAction(): Response
+    public function accountSettingsAction(
+        ?Request $request,
+        UserPasswordHasherInterface $passwordEncoder,
+    ): Response
     {
         $user           = $this->getUserEntity();
         $planets        = $this->getPlanetsByUser($user);
@@ -44,6 +49,19 @@ class UserController extends CustomAbstractController
         $prodActual     = $this->calculateProduction($actualPlanetId);
 
         $alliance = $this->userService->getAllianceByUuid($user->getAlliance());
+        $form     = $this->createForm(UserType::class, $user);
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $data = $form->getData();
+
+
+            #$this->userRepository->updatePassword($user, $passwordEncoder->hashPassword($user, $user->getPassword()));
+
+            #return $this->redirectToRoute('account_settings');
+        }
 
         return $this->render(
             'user/account_settings.html.twig',
@@ -55,7 +73,8 @@ class UserController extends CustomAbstractController
                 'slug'           => $user->getUuid(),
                 'production'     => $prodActual,
                 'user'           => $user,
-                'alliance'       => $alliance ?? null,
+                'alliance'       => $alliance ?? NULL,
+                'userForm'       => $form,
             ],
         );
     }
@@ -100,5 +119,31 @@ class UserController extends CustomAbstractController
         }
     }
 
+    #[Route('update-password', name: 'update_password')]
+    public function updatePasswordAction(
+        Request $request,
+        UserRepository $userRepository,
+        UserPasswordHasherInterface $passwordEncoder,
+    )
+    {
+        $user = $userRepository->findOneBy(['uuid' => $this->user->getUuid()]);
+        if ($request->get('inputPasswordNew') !== $request->get('inputPasswordNewVerify')) {
+            $this->addFlash('error', 'Die Passwörter stimmen nicht überein.');
+            return $this->redirectToRoute('account_settings');
+        }
+
+
+        if(!$passwordEncoder->hashPassword($user, $request->get('inputPasswordOld'))){
+            $this->addFlash('error', 'Das alte Passwort ist nicht korrekt.');
+            return $this->redirectToRoute('account_settings');
+        }
+
+        $user->setPassword($passwordEncoder->hashPassword($user, $request->get('inputPasswordNew')));
+        $userRepository->save($user, true);
+
+
+
+        return $this->redirectToRoute('account_settings');
+    }
 
 }

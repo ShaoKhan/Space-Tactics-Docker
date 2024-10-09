@@ -78,6 +78,18 @@ class UserRepository extends ServiceEntityRepository
         }
     }
 
+    public function updatePassword($user, $password)
+    {
+        return $this->createQueryBuilder('u')
+            ->update(User::class, 'u')
+            ->set('u.password', ':password')
+            ->where('u.uuid = :uuid')
+            ->setParameter('password', $password)
+            ->setParameter('uuid', $user->getUuid())
+            ->getQuery()
+            ->execute();
+    }
+
 //    /**
 //     * @return User[] Returns an array of User objects
 //     */
