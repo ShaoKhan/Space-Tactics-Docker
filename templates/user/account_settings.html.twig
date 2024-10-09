@@ -1,0 +1,103 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Space-Tactics Main{% endblock %}
+
+{% block body %}
+    <!-- Main Menu -->
+
+    {% include 'parts/ingame_mainmenu.html.twig' %}
+
+    <!-- Content -->
+    <section id="content" class="main">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-2 col-md-12">
+                    {% if app.user is not null %}
+                        {% include 'parts/sidebar.html.twig' %}
+                    {% endif %}
+                </div>
+
+                <div class="col-lg-10 col-md-12">
+                    <section>
+                        <div class="row">
+                            <div class="col-lg-7 col-md-12">
+                                <h3>Deine Accountdaten, {{ user.username }} </h3>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-7 col-md-12">
+                                <p>
+                                    Du bist bei uns registriert seit:
+                                    <strong>{{ user.registerOn|date('d.m.Y, H:i:m')~ ' Uhr' }}</strong><br/>
+                                    Deine letzte Anmeldung war am:
+                                    <strong>{{ user.lastActive|date('d.m.Y, H:i:m')~' Uhr'|default('noch nie') }}</strong><br/>
+                                    Du bist in der Allianz: <strong>{{ alliance.name|default('keiner') }}</strong><br />
+
+                                </p>
+                            </div>
+
+
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="alert alert-danger" id="errormessage"></div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-lg-5 col-md-12">
+                                    <div class="form-check form-switch d-flex align-items-center">
+                                        <input class="form-check-input me-3" type="checkbox" role="switch"
+                                               id="flexSwitchCheckDefault" data-vac="{{ user.vacation }}">
+                                        <label class="form-check-label" id="vacationLabel" for="flexSwitchCheckDefault">
+                                            Urlaubsmodus off
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <span class="anchor" id="formChangePassword"></span>
+
+                            <h3 class="mb-0">Passwort ändern</h3>
+                            {% for error in app.flashes('error') %}
+                                <div class="alert alert-danger" role="alert">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                            <form class="form" role="form" autocomplete="off" method="post" action="{{ path('update_password') }}">
+                                <div class="form-group">
+                                    <label for="inputPasswordOld">Aktuelles Passwort</label>
+                                    <input type="password" class="form-control" id="inputPasswordOld" name="inputPasswordOld"
+                                           required="">
+                                </div>
+                                <div class="form-group">
+                                    <label for="inputPasswordNew">Neues Passwort</label>
+                                    <input type="password" class="form-control" id="inputPasswordNew" name="inputPasswordNew"
+                                           required="">
+                                </div>
+                                <div class="form-group">
+                                    <label for="inputPasswordNewVerify">Neues Passwort bestätigen</label>
+                                    <input type="password" class="form-control" id="inputPasswordNewVerify" name="inputPasswordNewVerify"
+                                           required="">
+                                </div>
+                                <div class="form-group mt-3">
+                                    <button type="submit" class="btn btn-success btn-lg float-right">Save
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    {% include 'parts/footer.html.twig' %}
+{% endblock %}
+
+
+
+

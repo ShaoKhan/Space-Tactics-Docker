@@ -9,7 +9,7 @@
             {{ encore_entry_link_tags('app') }}
         <link rel="manifest" href="{{ asset('site.webmanifest') }}"/>
     {% endblock %}
-    {% block javascript %}{% endblock %}
+
 
 </head>
 <body class="subpage">
@@ -24,8 +24,10 @@
 
 </div>
 
+
 <!-- Scripts -->
 <script src="{{ asset('js/index.js') }}" type="module"></script>
+
 {# <script src="{{ asset('js/jquery.min.js') }}"></script>
 <script src="{{ asset('js/browser.min.js') }}"></script>
 <script src="{{ asset('js/breakpoints.min.js') }}"></script>

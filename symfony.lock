@@ -270,7 +270,7 @@
         "version": "v1.17.0"
     },
     "twig/extra-bundle": {
-        "version": "v3.10.0"
+        "version": "v3.13.0"
     },
     "vich/uploader-bundle": {
         "version": "2.4",

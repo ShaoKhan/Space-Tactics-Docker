@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Repository\AllianceRepository;
 use App\Repository\BuildingsRepository;
 use App\Repository\PlanetBuildingRepository;
 use App\Repository\PlanetRepository;
@@ -15,7 +16,8 @@ class UserService
         protected readonly PlanetRepository $planetRepository,
         protected readonly PlanetBuildingRepository $planetBuildingRepository,
         protected readonly SciencesRepository $sciencesRepository,
-        protected readonly PlanetScienceRepository $planetScienceRepository
+        protected readonly PlanetScienceRepository $planetScienceRepository,
+        protected readonly AllianceRepository $allianceRepository
     ){}
 
     public function calculateBuildingPoints($user):int
@@ -64,6 +66,11 @@ class UserService
         $buildingPoints = $this->calculateBuildingPoints($user);
         $sciencePoints = $this->calculateSciencePoints($user);
         return $buildingPoints + $sciencePoints;
+    }
+
+    public function getAllianceByUuid($uuid)
+    {
+        return $this->allianceRepository->findOneBy(['slug' => $uuid]);
     }
 
 }
