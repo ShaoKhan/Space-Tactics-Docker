@@ -1,0 +1,23 @@
+{
+  "dependencies": {
+    "@symfony/stimulus-bridge": "^3.2.2",
+    "@symfony/webpack-encore": "^4.6.1",
+    "image-minimizer-webpack-plugin": "^4.1.0",
+    "jquery": "^3.7.1"
+  },
+  "scripts": {
+    "dev-server": "encore dev-server",
+    "dev": "encore dev",
+    "watch": "encore dev --watch",
+    "build": "encore production --progress"
+  },
+  "devDependencies": {
+    "@hotwired/stimulus": "^3.0.0",
+    "@symfony/ux-live-component": "file:vendor/symfony/ux-live-component/assets",
+    "file-loader": "^6.0.0",
+    "sass": "^1.78.0",
+    "sass-loader": "^14.0.0",
+    "sharp": "^0.33.5",
+    "webpack-notifier": "^1.15.0"
+  }
+}

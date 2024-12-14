@@ -1,0 +1,15 @@
+vich_uploader:
+    db_driver: orm
+    
+    metadata:
+        type: attribute
+
+    mappings:
+        alliance:
+            uri_prefix: /img/alliance/logos
+            upload_destination: '%kernel.project_dir%/public/img/alliance/logos'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+            inject_on_load: false
+            delete_on_update: true
+            delete_on_remove: true
+    

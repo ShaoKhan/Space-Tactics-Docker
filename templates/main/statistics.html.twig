@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'buildings' %}
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="{{ asset('css/buildings.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block title %}Space-Tactics Main{% endblock %}
+{% block body %}
+
+    {% include 'parts/ingame_mainmenu.html.twig' %}
+    <section id="content" class="statistics">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-2 col-md-12">
+                    {% if app.user is not null %}
+                        {% include 'parts/sidebar.html.twig' %}
+                    {% endif %}
+                </div>
+                <div class="col-lg-10 col-md-12">
+                    <section>
+                        <div class="row">
+                            <div class="col-lg-7 col-md-12">
+                                <div class="row">
+                                    <div class="col-lg-12 col-md-4 mt-1">
+                                        <h3>Hier bekommst du eine Übersicht über dein Imperium {{ user.username }}.</h3>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    {% if buildings is not null %}
+                                        {% set planetcount = 12 / buildings|length %}
+                                        {% for data in buildings %}
+                                            {% set planetdata = data|first %}
+                                            <div class="col-{{ planetcount }} planetdata">
+                                                <div class="fw-bolder">
+                                                    <a href="{{ path('main', {'slug': planetdata.getPlanet.slug}) }}">{{ planetdata.getPlanet.name }}
+                                                        ({{ planetdata.getPlanet.getSystemX }}:{{ planetdata.getPlanet.getSystemY }}
+                                                        :{{ planetdata.getPlanet.getSystemZ }})</a>
+                                                </div>
+                                                <div class="resourceText">
+                                                    <div>{{ 'metal'|trans({}, 'resources') }}
+                                                        : {{ planetdata.getPlanet.getMetal|number_format(0,',','.') }}</div>
+                                                    <div>{{ 'crystal'|trans({}, 'resources') }}
+                                                        : {{ planetdata.getPlanet.getCrystal|number_format(0,',','.') }}</div>
+                                                    <div>{{ 'deuterium'|trans({}, 'resources') }}
+                                                        : {{ planetdata.getPlanet.getDeuterium|number_format(0,',','.') }}</div>
+                                                </div>
+{#                                                {{ dump(planetdata.getPlanet.getSlug) }}#}
+                                                {{ dump(data) }}
+                                                {% for building in data %}
+                                                    {% if building.0.buildingLevel > 0 %}
+                                                        <div class="buildingData">
+                                                            <div class="building">{{ building['buildingName']|trans([], 'buildings' ) }}
+                                                                :
+                                                            </div>
+                                                            <div class="buildingLevel">
+                                                                Level {{ building.0.buildingLevel }}</div>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    {% include 'parts/footer.html.twig' %}
+{% endblock %}

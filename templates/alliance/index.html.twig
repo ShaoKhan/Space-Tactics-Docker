@@ -1,0 +1,122 @@
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'alliance' %}
+
+
+{% block title %}Space-Tactics {{ 'alliance'|trans }} {% endblock %}
+
+{% block body %}
+    <!-- Main Menu -->
+
+    {% include 'parts/ingame_mainmenu.html.twig' %}
+
+
+    <!-- Content -->
+    <section id="content" class="main buildings-container">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-2 col-md-12">
+                    {% if app.user is not null %}
+                        {% include 'parts/sidebar.html.twig' %}
+                    {% endif %}
+                </div>
+
+                <div class="col-lg-10 col-md-12">
+                    <section>
+                        <div class="row">
+                            <div class="col-lg-6 mt-1">
+                                <h3>Willkommen zurück {{ user.username }} </h3>
+                            </div>
+                            <div class="col-lg-6">
+                                <select name="planet" class="form-control planet-switcher-select">
+                                    {% for planet in planets %}
+
+                                        <option
+                                            value="{{ planet.slug }}"
+                                            style="color: #000;"
+                                            {{ planet.slug == slug ? 'selected' : '' }}
+                                        >
+                                            {{ planet.name }}
+                                            {{ planet.systemX }}:{{ planet.systemY }}:{{ planet.systemZ }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                {% if allianceData is null %}
+                                    <div class="alert alert-primary" role="alert">
+                                        Hier ist dein Platz um Allianzen zu schmieden ...
+                                    </div>
+
+                                    {% if not canFoundAlliance %}
+                                        <div class="alert alert-danger" role="alert">
+                                            ... aber du hast noch nicht genug Punkte. Bleib dran!
+                                        </div>
+                                    {% endif %}
+
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6">
+                                {% if canFoundAlliance or allianceRank.ranking == 'ROLE_ALLIANCE_FOUNDER' %}
+                                    {{ form_start(form) }}
+                                    {% if form_errors(form) %}
+                                        <div class="alert alert-danger">
+                                            {% for error in form_errors(form) %}
+                                                <p>{{ error.message }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {{ form_row(form.name) }}
+                                    {{ form_row(form.allianceTag) }}
+                                    {{ form_row(form.headline) }}
+                                    {{ form_row(form.description) }}
+                                    {{ form_row(form.url) }}
+                                    {{ form_row(form.logo) }}
+                                    {{ form_row(form.save) }}
+                                    {{ form_end(form) }}
+                                {% endif %}
+                            </div>
+                            <div class="col-6">
+                                {% if allianceData is not null %}
+                                    {% if allianceData.logoName is not null %}
+                                        <img src="{{ asset('img/alliance/logos/' ~ allianceData.logoName) }}"
+                                             alt="{{ allianceData.getName }} Logo" class="alliance_logo"/>
+                                    {% endif %}
+
+                                    <h3 class="mt-3">{{ 'alliance_members'|trans }}</h3>
+
+                                    {% for member in members %}
+                                        <div class="row">
+                                            <div class="col-4">
+                                                {{ member.getUsername }}
+                                            </div>
+                                            <div class="col-2">
+                                                <a href="#">Nachricht</a>
+                                            </div>
+                                        </div>
+
+                                    {% endfor %}
+
+                                    <p>
+                                        <a href="{{ path('leave_alliance', {'slug': selectedPlanet.slug}) }}">
+                                            {{ 'leave_alliance'|trans }}
+                                        </a>
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    {% include 'parts/footer.html.twig' %}
+{% endblock %}
+
+
